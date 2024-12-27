@@ -1,0 +1,143 @@
+import { useAtom } from "jotai";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  environmentsAtom,
+  selectedEnvironmentIdAtom,
+  selectedRouteIdAtom,
+} from "../state/atoms";
+
+export function RouteSidebar() {
+  const [environments, setEnvironments] = useAtom(environmentsAtom);
+  const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom);
+  const [selectedRouteId, setSelectedRouteId] = useAtom(selectedRouteIdAtom);
+
+  const selectedEnvironment = environments.find(
+    (env) => env.id === selectedEnvironmentId
+  );
+  const routes = selectedEnvironment?.routes || [];
+
+  const addNewRoute = () => {
+    if (selectedEnvironmentId) {
+      const newRoute = {
+        id: Date.now().toString(),
+        path: "/api/new-route",
+        methods: ["GET"],
+        responses: [],
+        enabled: true,
+      };
+      setEnvironments(
+        environments.map((env) =>
+          env.id === selectedEnvironmentId
+            ? { ...env, routes: [...env.routes, newRoute] }
+            : env
+        )
+      );
+    }
+  };
+
+  const toggleRoute = (routeId: string) => {
+    setEnvironments(
+      environments.map((env) =>
+        env.id === selectedEnvironmentId
+          ? {
+              ...env,
+              routes: env.routes.map((route) =>
+                route.id === routeId
+                  ? { ...route, enabled: !route.enabled }
+                  : route
+              ),
+            }
+          : env
+      )
+    );
+  };
+
+  const duplicateRoute = (routeId: string) => {
+    const routeToDuplicate = routes.find((route) => route.id === routeId);
+    if (routeToDuplicate) {
+      const newRoute = {
+        ...routeToDuplicate,
+        id: Date.now().toString(),
+        path: `${routeToDuplicate.path}-copy`,
+      };
+      setEnvironments(
+        environments.map((env) =>
+          env.id === selectedEnvironmentId
+            ? { ...env, routes: [...env.routes, newRoute] }
+            : env
+        )
+      );
+    }
+  };
+
+  const deleteRoute = (routeId: string) => {
+    setEnvironments(
+      environments.map((env) =>
+        env.id === selectedEnvironmentId
+          ? {
+              ...env,
+              routes: env.routes.filter((route) => route.id !== routeId),
+            }
+          : env
+      )
+    );
+  };
+
+  return (
+    <div className="w-64 border-r bg-background">
+      <div className="p-4 space-y-4">
+        <Button onClick={addNewRoute} className="w-full">
+          <PlusCircle className="mr-2 h-4 w-4" /> New Route
+        </Button>
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search routes" className="pl-8" />
+        </div>
+      </div>
+      <ScrollArea className="h-[calc(100vh-9rem)]">
+        <div className="p-4 space-y-2">
+          {routes.map((route) => (
+            <div key={route.id} className="flex items-center justify-between">
+              <Button
+                variant={selectedRouteId === route.id ? "default" : "ghost"}
+                className={`w-full justify-start ${
+                  route.enabled ? "" : "opacity-50"
+                }`}
+                onClick={() => setSelectedRouteId(route.id)}
+              >
+                {route.path}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => toggleRoute(route.id)}>
+                    {route.enabled ? "Disable" : "Enable"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => duplicateRoute(route.id)}>
+                    Duplicate
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => deleteRoute(route.id)}>
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
