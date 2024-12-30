@@ -1,0 +1,30 @@
+{
+  "environments": [
+    {
+      "name": "default",
+      "routes": [
+        {
+          "url": "/api/test",
+          "httpMethod": "GET",
+          "responseSelectionStrategy": "default",
+          "responses": [
+            {
+              "name": "Response 1",
+              "statusCode": "200",
+              "body": "{\"response\": \"Hello world\"}",
+              "rules": [
+                {
+                  "type": "Header",
+                  "key": "Authorization",
+                  "operation": "equals",
+                  "negate": false,
+                  "value": "Secret"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

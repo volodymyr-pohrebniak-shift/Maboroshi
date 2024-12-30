@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
@@ -20,18 +21,41 @@ namespace Maboroshi.Web
         }
     }
 
-    public class RequestProcessor
+    public class RequestProcessor(IMockedRouteStore routesStore)
     {
-        public Task ProcessRequests(HttpContext context)
+        public async Task<IResult> ProcessRequests(HttpContext context)
         {
-            // find route by path method
+            var routes = routesStore.GetRoutesByCriteria(context.Request.Path, MapMethodFromRequest(context.Request.Method));
 
-            // validate rules if any
+            if (!routes.Any())
+            {
+                return Results.NotFound();
+            }
+
+            var route = routes.First();
+
 
             // set response
+            await Task.Delay(0);
 
-            return Task.CompletedTask;
+            return Results.NotFound();
         }
+
+        private HttpMethod MapMethodFromRequest(string method) => method switch
+        {
+                "GET" => HttpMethod.GET,
+                "POST" => HttpMethod.POST,
+                "PUT" => HttpMethod.PUT,
+                "DELETE" => HttpMethod.DELETE,
+                "PATCH" => HttpMethod.PATCH,
+                _ => HttpMethod.GET
+            };
+    }
+
+    public interface IMockedRouteStore
+    {
+        void AddRoute(MockedRoute route);
+        IEnumerable<MockedRoute> GetRoutesByCriteria(string url, HttpMethod method);
     }
 
     public class MockedRouteStore
@@ -70,6 +94,7 @@ namespace Maboroshi.Web
     [Flags]
     public enum HttpMethod
     {
+        NONE = 0,
         GET = 1,
         POST = 2,
         PUT = 4,
@@ -81,19 +106,122 @@ namespace Maboroshi.Web
     {
         public required string Url { get; set; }
         public HttpMethod HttpMethod { get; set; }
+        public IEnumerable<Response> Responses { get; }
+        public ResponseSelectionStrategy ResponseSelectionStrategy { get; }
+    }
 
+    public enum ResponseSelectionStrategy
+    {
+        Default,
+        Random,
+        Sequence
+    }
 
+    public class Response
+    {
+        public string StatusCode { get; }
+        public string Content { get; }
+        public IEnumerable<IMatchingRule> Rules { get; }
+        public IEnumerable<Header> Headers { get; }
+    }
 
+    public class Header
+    {
+        public string Key { get; }
+        public string Value { get; }
     }
 
     public interface IRuleInput
     {
-
+        Dictionary<string, string> RequestHeaders { get; }
+        Dictionary<string, string> QueryParameters { get; }
+        Dictionary<string, string> RouteParameters { get; }
     }
 
     public interface IMatchingRule
     {
         bool Evaluate(IRuleInput input);
+    }
+
+    public class SingleOperationMatchingRule(MatchingRuleType ruleType, string? key, string? value, MatchingRuleOperation operation, bool negate) : IMatchingRule
+    {
+        public bool Evaluate(IRuleInput input)
+        {
+            switch (ruleType)
+            {
+                case MatchingRuleType.Header:
+                    if (input.RequestHeaders.TryGetValue(key!, out var headerValue))
+                    {
+                        switch (operation)
+                        {
+                            case MatchingRuleOperation.Equals:
+                                return !negate && headerValue.Equals(value);
+                            case MatchingRuleOperation.Contains:
+                                return !negate && headerValue.Contains(value!);
+                            case MatchingRuleOperation.NullOrEmpty:
+                                return !negate && string.IsNullOrEmpty(headerValue);
+                            case MatchingRuleOperation.Regex:
+                                return !negate && new Regex(value!).IsMatch(headerValue);
+                        }
+                    } else
+                    {
+                        return false;
+                    }
+                    break;
+                case MatchingRuleType.Route:
+                    if (input.RouteParameters.TryGetValue(key!, out var routeValue))
+                    {
+                        switch (operation)
+                        {
+                            case MatchingRuleOperation.Equals:
+                                return !negate && routeValue.Equals(value);
+                            case MatchingRuleOperation.Contains:
+                                return !negate && routeValue.Contains(value!);
+                            case MatchingRuleOperation.NullOrEmpty:
+                                return !negate && string.IsNullOrEmpty(routeValue);
+                            case MatchingRuleOperation.Regex:
+                                return !negate && new Regex(value!).IsMatch(routeValue);
+                        }
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                    break;
+                case MatchingRuleType.Query:
+                    if (input.RouteParameters.TryGetValue(key!, out var queryValue))
+                    {
+                        switch (operation)
+                        {
+                            case MatchingRuleOperation.Equals:
+                                return !negate && queryValue.Equals(value);
+                            case MatchingRuleOperation.Contains:
+                                return !negate && queryValue.Contains(value!);
+                            case MatchingRuleOperation.NullOrEmpty:
+                                return !negate && string.IsNullOrEmpty(queryValue);
+                            case MatchingRuleOperation.Regex:
+                                return !negate && new Regex(value!).IsMatch(queryValue);
+                        }
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                    break;
+            }
+
+
+            throw new NotImplementedException();
+        }
+    }
+
+    public enum MatchingRuleType
+    {
+        Header,
+        Route,
+        Query,
+        Cookie,
+        Body
     }
 
     public class AggregateRule(IEnumerable<IMatchingRule> rules, AggregateRuleOperation op) : IMatchingRule
@@ -123,7 +251,7 @@ namespace Maboroshi.Web
         OR
     }
 
-    public enum MatchingRuleOPeration
+    public enum MatchingRuleOperation
     {
         Equals,
         Contains,
