@@ -10,15 +10,49 @@
           "responses": [
             {
               "name": "Response 1",
-              "statusCode": "200",
+              "statusCode": 200,
               "body": "{\"response\": \"Hello world\"}",
+              "rules": []
+            }
+          ]
+        },
+        {
+          "url": "/api/parameters/:id",
+          "httpMethod": "GET, POST",
+          "responseSelectionStrategy": "default",
+          "responses": [
+            {
+              "name": "Response 1",
+              "statusCode": 200,
+              "body": "{\"response\": \"Authorized\"}",
               "rules": [
                 {
                   "type": "Header",
                   "key": "Authorization",
-                  "operation": "equals",
-                  "negate": false,
-                  "value": "Secret"
+                  "value": "Secret",
+                  "operation": "Equals",
+                  "negate": false
+                },
+                {
+                  "type": "Query",
+                  "key": "Test",
+                  "value": "Secret",
+                  "operation": "Equals",
+                  "negate": true
+                }
+              ]
+            },
+            {
+              "name": "Response 2",
+              "statusCode": 401,
+              "body": "{\"response\": \"Not Authorized\"}",
+              "rules": [
+                {
+                  "type": "Header",
+                  "key": "Authorization",
+                  "value": "Secret",
+                  "operation": "Equals",
+                  "negate": true
                 }
               ]
             }

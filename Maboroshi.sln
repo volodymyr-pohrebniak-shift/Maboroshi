@@ -5,6 +5,10 @@ VisualStudioVersion = 17.12.35527.113 d17.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maboroshi.Web", "Maboroshi.Web\Maboroshi.Web.csproj", "{F93CBA17-16BF-427D-B1BA-B85D13E84DE4}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{DCF42B29-10A4-40A7-BC42-655C381E90D0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maboroshi.UnitTests", "Maboroshi.UnitTests\Maboroshi.UnitTests.csproj", "{00E35FBF-AC8A-4FC1-9BE7-A3BF15A76EC6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,8 +19,15 @@ Global
 		{F93CBA17-16BF-427D-B1BA-B85D13E84DE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F93CBA17-16BF-427D-B1BA-B85D13E84DE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F93CBA17-16BF-427D-B1BA-B85D13E84DE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00E35FBF-AC8A-4FC1-9BE7-A3BF15A76EC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00E35FBF-AC8A-4FC1-9BE7-A3BF15A76EC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00E35FBF-AC8A-4FC1-9BE7-A3BF15A76EC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00E35FBF-AC8A-4FC1-9BE7-A3BF15A76EC6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{00E35FBF-AC8A-4FC1-9BE7-A3BF15A76EC6} = {DCF42B29-10A4-40A7-BC42-655C381E90D0}
 	EndGlobalSection
 EndGlobal
