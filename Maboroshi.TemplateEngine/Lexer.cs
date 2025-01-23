@@ -17,7 +17,7 @@ internal class Lexer(string source)
             if (c == '{' && Peek() == '{')
             {
                 expressionStarted = true;
-                _tokens.Add(new Token(TokenType.TEXT, _source[start.._current]));
+                _tokens.Add(new Token(TokenType.TEXT, _source[start..(_current - 1)]));
                 _tokens.Add(new Token(TokenType.EXPRESSION_START, "{{"));
                 start = _current;
             }
@@ -25,7 +25,7 @@ internal class Lexer(string source)
             {
                 expressionStarted = false;
                 _tokens.Add(new Token(TokenType.EXPRESSION_END, "}}"));
-                start = _current;
+                start = _current + 1;
             }
             else if (expressionStarted)
             {
@@ -38,7 +38,10 @@ internal class Lexer(string source)
                 } else
                 {
                     var token = ReadStringLiteral();
+                    token ??= ReadNumber();
                     token ??= ReadVariable();
+                    token ??= ReadStartBlock();
+                    token ??= ReadEndBlock();
                     token ??= ReadIdentifier();
 
                     if (token != null)
@@ -75,7 +78,9 @@ internal class Lexer(string source)
             Advance();
             if (char.IsWhiteSpace(Peek()) || Peek() == '}') 
             {
-                return new Token(TokenType.VAR_IDENTIFIER, _source[start.._current]);
+                if (_current == start + 1)
+                    throw new InvalidOperationException("Variable name can't be empty");
+                return new Token(TokenType.VAR_IDENTIFIER, _source[(start+1).._current]);
             }
         }
 
@@ -93,8 +98,27 @@ internal class Lexer(string source)
             Advance();
             if (Peek() == '\'')
             {
-                return new Token(TokenType.STRING, _source[start..(_current+1)]);
+                return new Token(TokenType.STRING, _source[(start+1).._current]);
             }
+        }
+
+        throw new InvalidOperationException("Expression was started, but not closed");
+    }
+
+    private Token? ReadNumber()
+    {
+        if (!char.IsDigit(Peek())) return null;
+        var start = _current;
+        
+        while (_current < _source.Length)
+        {
+            Advance();
+            if (char.IsWhiteSpace(Peek()))
+            {
+                return new Token(TokenType.NUMBER, _source[start.._current]);
+            }
+            if (!char.IsDigit(Peek()))
+                throw new InvalidOperationException("Invalid number");
         }
 
         throw new InvalidOperationException("Expression was started, but not closed");
@@ -102,13 +126,10 @@ internal class Lexer(string source)
 
     private Token? ReadIdentifier()
     {
-        bool IsValidStartCharacter(char ch)
-        {
-            return (ch >= '0' && ch <= '9') 
+        static bool IsValidStartCharacter(char ch) => (ch >= '0' && ch <= '9')
                 || (ch >= 'a' && ch <= 'z')
                 || (ch >= 'A' && ch <= 'Z')
                 || ch == '_';
-        }
 
         if (!IsValidStartCharacter(Peek())) return null;
 
@@ -119,23 +140,49 @@ internal class Lexer(string source)
             Advance();
             if (char.IsWhiteSpace(Peek()) || Peek() == '}')
             {
-                return new Token(TokenType.IDENRIFIER, _source[start.._current]);
+                return new Token(TokenType.IDENTIFIER, _source[start.._current]);
             }
         }
 
         throw new InvalidOperationException("Expression was started, but not closed");
     }
 
-    private void ReadText()
+    private Token? ReadStartBlock()
     {
-        var start = _current;
+        if (Peek() != '#') return null;
 
-        while (_current < _source.Length && _source[_current] != '{')
+        var start = _current;
+        while (_current < _source.Length)
         {
             Advance();
+            if (char.IsWhiteSpace(Peek()) || Peek() == '}')
+            {
+                if (_current == start + 1)
+                    throw new InvalidOperationException("Block name can't be empty");
+                return new Token(TokenType.BLOCK_START, _source[(start+1).._current]);
+            }
         }
 
-        _tokens.Add(new Token(TokenType.TEXT, _source[start.._current]));
+        throw new InvalidOperationException("Expression was started, but not closed");
+    }
+
+    private Token? ReadEndBlock()
+    {
+        if (Peek() != '/') return null;
+
+        var start = _current;
+        while (_current < _source.Length)
+        {
+            Advance();
+            if (char.IsWhiteSpace(Peek()) || Peek() == '}')
+            {
+                if (_current == start + 1)
+                    throw new InvalidOperationException("Block name can't be empty");
+                return new Token(TokenType.BLOCK_END, _source[(start + 1).._current]);
+            }
+        }
+
+        throw new InvalidOperationException("Expression was started, but not closed");
     }
 
     private char Advance()

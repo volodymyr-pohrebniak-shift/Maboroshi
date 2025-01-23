@@ -16,7 +16,7 @@ internal enum TokenType
     BLOCK_START, BLOCK_END,
     
     // Literals
-    IDENRIFIER, STRING, NUMBER, VAR_IDENTIFIER,
+    IDENTIFIER, STRING, NUMBER, VAR_IDENTIFIER,
 
     // Everything outside of expressions
     TEXT,

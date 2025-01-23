@@ -4,7 +4,7 @@ public class TemplateEngine
 {
     public static Template Generate(string templateStr)
     {
-        return new Template();
+        return new Template(templateStr);
     }
 
 }

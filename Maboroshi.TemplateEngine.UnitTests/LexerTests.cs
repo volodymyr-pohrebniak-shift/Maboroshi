@@ -18,5 +18,18 @@ namespace Maboroshi.TemplateEngine.UnitTests
 
             Assert.NotEmpty(tokens);
         }
+
+        [Fact]
+        public void Lexer_Should_Parse_Text()
+        {
+            var str = "test";
+
+            var lexer = new Lexer(str);
+
+            var tokens = lexer.Tokenize();
+
+            Assert.Equal(2, tokens.Count());
+            Assert.Equal(TokenType.TEXT, tokens.First().TokenType);
+        }
     }
 }
