@@ -14,6 +14,7 @@ public class TemplateEngineTests
   ""upper"": {{ uppercase @name }}""
   ""repeat"": [
     {{ #repeat 3 }}
+        {{ @index }}
         {{ lowercase 'TEST' }}
         test
 {{ /end }}

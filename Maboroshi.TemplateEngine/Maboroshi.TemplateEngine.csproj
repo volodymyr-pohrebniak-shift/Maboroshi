@@ -10,4 +10,9 @@
 	<ItemGroup>
 		<InternalsVisibleTo Include="Maboroshi.TemplateEngine.UnitTests" />
 	</ItemGroup>
+
+
+	<ItemGroup>
+	  <PackageReference Include="Bogus" Version="35.6.1" />
+	</ItemGroup>
 </Project>

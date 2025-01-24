@@ -168,11 +168,13 @@ public class Template(string content)
                         repeatCount = minCount;
                     }
                     var sb = new StringBuilder();
+                    var nestedContext = new TemplateContext(context);
                     for(var i = 0; i < repeatCount; i++)
                     {
+                        nestedContext.SetVariable("index", i);
                         foreach(var body in node.Body)
                         {
-                            sb.Append(Visit(body, context));
+                            sb.Append(Visit(body, nestedContext));
                         }
                     }
                     return sb.ToString();
@@ -180,9 +182,6 @@ public class Template(string content)
                 {
                     throw new Exception($"repeat block parameters should be int");
                 }
-                
-
-                break;
             default:
                 return string.Empty;
         }
@@ -192,13 +191,22 @@ public class Template(string content)
 
 public class TemplateContext
 {
-    private readonly Dictionary<string, object> _variables = new();
+    private readonly TemplateContext? _parent;
+    private readonly Dictionary<string, object> _variables = [];
+
+    public TemplateContext() { }
+
+    public TemplateContext(TemplateContext? parent)
+    {
+        _parent = parent;
+    }
 
     public object GetVariable(string name)
     {
-        if (_variables.ContainsKey(name))
-            return _variables[name];
-
+        if (_variables.TryGetValue(name, out object? value))
+            return value;
+        else if (_parent is not null)
+            return _parent.GetVariable(name);
         throw new Exception($"Variable {name} doesn't exist");
     }
 
