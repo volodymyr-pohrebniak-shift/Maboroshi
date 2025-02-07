@@ -1,42 +1,12 @@
-﻿namespace Maboroshi.TemplateEngine;
+﻿using Maboroshi.TemplateEngine.TemplateNodes;
+
+namespace Maboroshi.TemplateEngine;
 
 public class TemplateParsingException(string message) : Exception(message);
 
-public abstract class TemplateNode
-{
-
-}
-
-public class TextNode(string value) : TemplateNode
-{
-    public string Value { get; } = value;
-}
-
-public class ExpressionNode(List<TemplateNode> nodes) : TemplateNode
+internal class ExpressionNode(List<TemplateNode> nodes) : TemplateNode
 {
     public List<TemplateNode> Parameters { get; } = nodes;
-}
-
-public class BlockNode(string name, List<TemplateNode> parameters, List<TemplateNode> nodes) : TemplateNode
-{
-    public string Name { get; } = name;
-    public List<TemplateNode> Parameters { get; } = parameters;
-    public List<TemplateNode> Body { get; } = nodes;
-}
-
-public class LiteralNode(string value) : TemplateNode
-{
-    public string Value { get; } = value;
-}
-
-public class VariableNode(string value) : TemplateNode
-{
-    public string Value { get; } = value;
-}
-
-public class IdentifierNode(string value) : TemplateNode
-{
-    public string Value { get; } = value;
 }
 
 internal class Parser(List<Token> tokens)
@@ -82,49 +52,39 @@ internal class Parser(List<Token> tokens)
 
     private TemplateNode? ParseExpression(TokenType endTokenType = TokenType.EXPRESSION_END)
     {
-        if (Current.TokenType == TokenType.BLOCK_START)
-        {
-            return ParseBlock();
-        }
+        var current = _tokens[_current++];
 
-        var nodes = new List<TemplateNode>();
+        if (current.TokenType == endTokenType) return null;
 
-        while (Current.TokenType != endTokenType && !IsAtEnd())
+        TemplateNode? node = current.TokenType switch
         {
-            if (Match(TokenType.SUB_EXP_START))
-            {
-                var node = ParseExpression(TokenType.SUB_EXP_END);
-                if (node != null)
-                    nodes.Add(node);
-            }
-            else if (Match(TokenType.STRING))
-            {
-                nodes.Add(new LiteralNode(Previous.Value));
-            }
-            else if (Match(TokenType.NUMBER))
-            {
-                nodes.Add(new LiteralNode(Previous.Value));
-            }
-            else if (Match(TokenType.VAR_IDENTIFIER))
-            {
-                nodes.Add(new VariableNode(Previous.Value));
-            }
-            else if (Match(TokenType.IDENTIFIER))
-            {
-                nodes.Add(new IdentifierNode(Previous.Value));
-            }
-            else
-            {
-                throw new TemplateParsingException($"Unexpected token: {Current.TokenType}");
-            }
-        }
+            TokenType.BLOCK_START => ParseBlock(),
+            TokenType.FUNCTION_NAME => ParseFunction(endTokenType),
+            TokenType.STRING => new LiteralNode(current.Value),
+            TokenType.NUMBER => new LiteralNode(current.Value),
+            TokenType.VAR_IDENTIFIER => new VariableNode(current.Value),
+            TokenType.SUB_EXP_START => ParseExpression(TokenType.EXPRESSION_END),
+            _ => throw new TemplateParsingException($"Unexpected token: {current.TokenType}")
+        };
 
         Consume(endTokenType);
 
-        if (nodes.Count == 0)
-            return null;
+        return node;
+    }
 
-        return new ExpressionNode(nodes);
+    private FunctionNode ParseFunction(TokenType endTokenType = TokenType.EXPRESSION_END)
+    {
+        var functionName = Current.Value;
+
+        var parameters = new List<TemplateNode>();
+        while (Current.TokenType != endTokenType && !IsAtEnd())
+        {
+            var node = ParseExpression(endTokenType);
+            if (node != null)
+                parameters.Add(node);
+        }
+
+        return new FunctionNode(functionName, parameters);
     }
 
     private BlockNode? ParseBlock()

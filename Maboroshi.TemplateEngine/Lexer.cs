@@ -42,7 +42,7 @@ internal class Lexer(string source)
                     token ??= ReadVariable();
                     token ??= ReadStartBlock();
                     token ??= ReadEndBlock();
-                    token ??= ReadIdentifier();
+                    token ??= ReadFunctionName();
 
                     if (token != null)
                     {
@@ -124,7 +124,7 @@ internal class Lexer(string source)
         throw new InvalidOperationException("Expression was started, but not closed");
     }
 
-    private Token? ReadIdentifier()
+    private Token? ReadFunctionName()
     {
         static bool IsValidStartCharacter(char ch) => (ch >= '0' && ch <= '9')
                 || (ch >= 'a' && ch <= 'z')
@@ -140,7 +140,7 @@ internal class Lexer(string source)
             Advance();
             if (char.IsWhiteSpace(Peek()) || Peek() == '}')
             {
-                return new Token(TokenType.IDENTIFIER, _source[start.._current]);
+                return new Token(TokenType.FUNCTION_NAME, _source[start.._current]);
             }
         }
 

@@ -1,13 +1,53 @@
-﻿using System.Text;
+﻿using Maboroshi.TemplateEngine.TemplateNodes;
+using System.Text;
 
 namespace Maboroshi.TemplateEngine;
 
-public class Template(string content)
+public interface IExpressionValueResolver
 {
-    public string Content { get; } = content;
+    string? TryResolve(string name, params object[] additionalArguments);
+}
 
-    public string Compile()
+public class StringExpressionResolver : IExpressionValueResolver
+{
+    public string? TryResolve(string name, params object[] additionalArguments)
     {
+        return null;
+    }
+}
+
+
+internal record TemplateError;
+
+internal record Result<T>(T value)
+{
+
+}
+
+
+class TemplateNodeVisitor
+{
+    public Result<string> Visit(TemplateNode node)
+    {
+        return null;
+    }
+}
+
+public class Template
+{
+    internal Template(string content)
+    {
+        Content = content;
+    }
+
+    private readonly IExpressionValueResolver _fakerResolver = new FakerDynamicResolver();
+    private IExpressionValueResolver? _httpRequestResolver;
+
+    public string Content { get; }
+
+    public string Compile(IExpressionValueResolver httpRequestResolver)
+    {
+        _httpRequestResolver = httpRequestResolver;
         var lexer = new Lexer(Content);
         var parser = new Parser(lexer.Tokenize().ToList());
         var nodes = parser.Parse();
@@ -25,17 +65,13 @@ public class Template(string content)
 
     private string Visit(TemplateNode node,TemplateContext context)
     {
-        switch(node) {
-            case TextNode textNode:
-                return textNode.Value;
-            case ExpressionNode expressionNode:
-                return VisitExpression(expressionNode, context).ToString()!;
-            case BlockNode blockNode:
-                return VisitBlock(blockNode, context);
-            default:
-                throw new InvalidOperationException($"No visitor for node type {node.GetType()}");
-        }
-
+        return node switch
+        {
+            TextNode textNode => textNode.Value,
+            ExpressionNode expressionNode => VisitExpression(expressionNode, context).ToString()!,
+            BlockNode blockNode => VisitBlock(blockNode, context),
+            _ => throw new InvalidOperationException($"No visitor for node type {node.GetType()}"),
+        };
     }
 
     private object VisitExpression(ExpressionNode node, TemplateContext context)
@@ -50,7 +86,7 @@ public class Template(string content)
         {
             return context.GetVariable(variableNode.Value);
         }
-        else if (firstNode is IdentifierNode identifierNode)
+        else if (firstNode is FunctionNode identifierNode)
         {
             return EvaluateIdentifier(identifierNode, node.Parameters.Skip(1).ToList(), context);
         } else
@@ -59,9 +95,9 @@ public class Template(string content)
         }
     }
 
-    private object EvaluateIdentifier(IdentifierNode node, List<TemplateNode> parameters, TemplateContext context)
+    private object EvaluateIdentifier(FunctionNode node, List<TemplateNode> parameters, TemplateContext context)
     {
-        switch(node.Value.ToLower())
+        switch(node.Name.ToLower())
         {
             case "var":
                 if (parameters.Count < 2)
@@ -120,10 +156,21 @@ public class Template(string content)
             // faker
 
             case "faker":
-                break;
+                if (parameters.Count == 0)
+                    throw new Exception($"lowercase requires a parameter");
+                var fakerParameter = EvaluateParameter(parameters[0], context);
+
+                if (fakerParameter is string str2)
+                {
+                    return _fakerResolver.TryResolve(str2)!;
+                }
+                throw new Exception($"lowercase requires a string parameter");
+
+            // http request info
+
 
             default:
-                throw new Exception($"Unknown identifier {node.Value}");
+                throw new Exception($"Unknown identifier {node.Name}");
         }
 
         return string.Empty;
@@ -131,17 +178,13 @@ public class Template(string content)
 
     private object EvaluateParameter(TemplateNode node, TemplateContext context)
     {
-        switch(node)
+        return node switch
         {
-            case ExpressionNode subExpressionNode:
-                return VisitExpression(subExpressionNode, context);
-            case LiteralNode literalNode:
-                return literalNode.Value;
-            case VariableNode variableNode:
-                return context.GetVariable(variableNode.Value);
-            default:
-                throw new Exception("Wrong type for the parameter");
-        }
+            ExpressionNode subExpressionNode => VisitExpression(subExpressionNode, context),
+            LiteralNode literalNode => literalNode.Value,
+            VariableNode variableNode => context.GetVariable(variableNode.Value),
+            _ => throw new Exception("Wrong type for the parameter"),
+        };
     }
 
     private string VisitBlock(BlockNode node, TemplateContext context) {
@@ -185,7 +228,23 @@ public class Template(string content)
             default:
                 return string.Empty;
         }
-        return string.Empty;
+    }
+}
+
+public class StaticExpressionValueResolver : IExpressionValueResolver
+{
+    public string? TryResolve(string name, params object[] additionalArguments)
+    {
+        return name.ToLower() switch
+        {
+            "var" => EvaluateVariableSetting(),
+            _ => null
+        };
+    }
+
+    private string EvaluateVariableSetting()
+    {
+        return "";
     }
 }
 

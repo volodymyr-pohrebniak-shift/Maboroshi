@@ -1,35 +1,34 @@
-namespace Maboroshi.TemplateEngine.UnitTests
+namespace Maboroshi.TemplateEngine.UnitTests;
+
+public class LexerTests
 {
-    public class LexerTests
+    [Fact]
+    public void Lexer_Should_Parse_String()
     {
-        [Fact]
-        public void Lexer_Should_Parse_String()
-        {
-            var str = @"{
+        var str = @"{
   ""userId"": ""text"",
   ""name"": ""{{queryParam 'name' 'John'}}"",
   ""var"": {{@test}},
   ""oneItem"": ""{{oneOf (array 'item1' 'item2' 'item3')}}"", 
 }";
 
-            var lexer = new Lexer(str);
+        var lexer = new Lexer(str);
 
-            var tokens = lexer.Tokenize();
+        var tokens = lexer.Tokenize();
 
-            Assert.NotEmpty(tokens);
-        }
+        Assert.NotEmpty(tokens);
+    }
 
-        [Fact]
-        public void Lexer_Should_Parse_Text()
-        {
-            var str = "test";
+    [Fact]
+    public void Lexer_Should_Parse_Text()
+    {
+        var str = "test";
 
-            var lexer = new Lexer(str);
+        var lexer = new Lexer(str);
 
-            var tokens = lexer.Tokenize();
+        var tokens = lexer.Tokenize();
 
-            Assert.Equal(2, tokens.Count());
-            Assert.Equal(TokenType.TEXT, tokens.First().TokenType);
-        }
+        Assert.Equal(2, tokens.Count());
+        Assert.Equal(TokenType.TEXT, tokens.First().TokenType);
     }
 }

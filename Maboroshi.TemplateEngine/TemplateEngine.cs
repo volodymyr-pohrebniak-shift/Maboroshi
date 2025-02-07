@@ -2,9 +2,13 @@
 
 public class TemplateEngine
 {
-    public static Template Generate(string templateStr)
+    public static Template CreateTemplate(string templateStr)
     {
+
+
         return new Template(templateStr);
     }
 
 }
+
+public record TemplateCompilationOptions(bool Strict);
