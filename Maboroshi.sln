@@ -3,15 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maboroshi.Web", "Maboroshi.Web\Maboroshi.Web.csproj", "{F93CBA17-16BF-427D-B1BA-B85D13E84DE4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Maboroshi.Web", "Maboroshi.Web\Maboroshi.Web.csproj", "{F93CBA17-16BF-427D-B1BA-B85D13E84DE4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{DCF42B29-10A4-40A7-BC42-655C381E90D0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maboroshi.UnitTests", "Maboroshi.UnitTests\Maboroshi.UnitTests.csproj", "{00E35FBF-AC8A-4FC1-9BE7-A3BF15A76EC6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Maboroshi.UnitTests", "Maboroshi.UnitTests\Maboroshi.UnitTests.csproj", "{00E35FBF-AC8A-4FC1-9BE7-A3BF15A76EC6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maboroshi.TemplateEngine", "Maboroshi.TemplateEngine\Maboroshi.TemplateEngine.csproj", "{E03E35E7-01D0-422A-8C4B-2F9790A6830F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Maboroshi.TemplateEngine", "Maboroshi.TemplateEngine\Maboroshi.TemplateEngine.csproj", "{E03E35E7-01D0-422A-8C4B-2F9790A6830F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maboroshi.TemplateEngine.UnitTests", "Maboroshi.TemplateEngine.UnitTests\Maboroshi.TemplateEngine.UnitTests.csproj", "{49BA1951-87F2-4CBC-8AF3-F91A09AD4909}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Maboroshi.TemplateEngine.UnitTests", "Maboroshi.TemplateEngine.UnitTests\Maboroshi.TemplateEngine.UnitTests.csproj", "{49BA1951-87F2-4CBC-8AF3-F91A09AD4909}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,5 +42,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{00E35FBF-AC8A-4FC1-9BE7-A3BF15A76EC6} = {DCF42B29-10A4-40A7-BC42-655C381E90D0}
 		{49BA1951-87F2-4CBC-8AF3-F91A09AD4909} = {DCF42B29-10A4-40A7-BC42-655C381E90D0}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8E743FF1-035A-46ED-9ED6-26FA5E351EF0}
 	EndGlobalSection
 EndGlobal

@@ -23,10 +23,7 @@ namespace Maboroshi.Web
 
             var app = builder.Build();
 
-            app.Map("{**catchAll}", (HttpContext context, RequestProcessor requestProcessor) =>
-            {
-                return requestProcessor.ProcessRequests(context);
-            });
+            app.Map("{**catchAll}", (HttpContext context, RequestProcessor requestProcessor) => requestProcessor.ProcessRequests(context));
 
             app.Run();
         }
@@ -77,7 +74,7 @@ namespace Maboroshi.Web
             return new CustomResult(selectedResponse.StatusCode, selectedResponse.Headers.ToDictionary(x => x.Key, x => x.Value), selectedResponse.Body);
         }
 
-        private Models.HttpMethod MapMethodFromRequest(string method) => method switch
+        private static Models.HttpMethod MapMethodFromRequest(string method) => method switch
         {
                 "GET" => Models.HttpMethod.GET,
                 "POST" => Models.HttpMethod.POST,
@@ -91,7 +88,7 @@ namespace Maboroshi.Web
         {
             return new RuleInput()
             {
-                RouteParameters = new Dictionary<string, string>(),
+                RouteParameters = [],
                 QueryParameters = request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
                 Headers = request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString()),
             };

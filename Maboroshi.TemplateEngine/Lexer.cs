@@ -4,7 +4,7 @@ internal class Lexer(string source)
 {
     private readonly string _source = source;
     private readonly List<Token> _tokens = [];
-    private int _current = 0;
+    private int _current;
 
     public IEnumerable<Token> Tokenize()
     {
@@ -17,7 +17,10 @@ internal class Lexer(string source)
             if (c == '{' && Peek() == '{')
             {
                 expressionStarted = true;
-                _tokens.Add(new Token(TokenType.TEXT, _source[start..(_current - 1)]));
+                if (start != _current - 1)
+                {
+                    _tokens.Add(new Token(TokenType.TEXT, _source[start..(_current - 1)]));
+                }
                 _tokens.Add(new Token(TokenType.EXPRESSION_START, "{{"));
                 start = _current;
             }
@@ -76,7 +79,7 @@ internal class Lexer(string source)
         while (_current < _source.Length)
         {
             Advance();
-            if (char.IsWhiteSpace(Peek()) || Peek() == '}') 
+            if (char.IsWhiteSpace(Peek()) || Peek() == '}')
             {
                 if (_current == start + 1)
                     throw new InvalidOperationException("Variable name can't be empty");
@@ -109,7 +112,7 @@ internal class Lexer(string source)
     {
         if (!char.IsDigit(Peek())) return null;
         var start = _current;
-        
+
         while (_current < _source.Length)
         {
             Advance();

@@ -5,22 +5,27 @@ using System.Reflection;
 
 namespace Maboroshi.TemplateEngine;
 
-internal class FakerResolver : IExpressionValueResolver
+interface IFakerAdapter
+{
+    public ReturnType? GetFakeValue(string name, params ReturnType[] args);
+}
+
+internal class FakerAdapter : IFakerAdapter
 {
     private static readonly Faker _faker = new();
 
-    public string? TryResolve(string name, params object[] additionalArguments)
+    public ReturnType? GetFakeValue(string name, params ReturnType[] additionalArguments)
     {
-        return string.Empty;
+        return new StringReturn("");
     }
 }
 
-internal class FakerDynamicResolver : IExpressionValueResolver
+internal class FakerDynamicResolver : IFakerAdapter
 {
     private static readonly Faker _faker = new();
     private static readonly ConcurrentDictionary<string, Func<object, object>> _propertiesCache = [];
 
-    public string? TryResolve(string path, params object[] additionalArguments)
+    public ReturnType? GetFakeValue(string path, params ReturnType[] additionalArguments)
     {
         if (string.IsNullOrEmpty(path))
         {
@@ -33,7 +38,7 @@ internal class FakerDynamicResolver : IExpressionValueResolver
             _propertiesCache[path] = compiledDelegate;
         }
 
-        return (string) compiledDelegate(_faker);
+        return new StringReturn((string) compiledDelegate(_faker));
     }
 
     private static Func<object, object> CompileDelegate(string path) {

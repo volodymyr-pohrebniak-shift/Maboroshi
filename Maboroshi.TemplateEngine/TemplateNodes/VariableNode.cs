@@ -1,6 +1,10 @@
 ﻿namespace Maboroshi.TemplateEngine.TemplateNodes;
 
-internal class VariableNode(string value) : TemplateNode
+internal sealed class VariableNode(string value) : TemplateNode
 {
     public string Value { get; } = value;
+    public override T Accept<T>(ITemplateNodeVisitor<T> visitor)
+    {
+        return visitor.VisitVariableNode(this);
+    }
 }
