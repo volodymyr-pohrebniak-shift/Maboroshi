@@ -5,13 +5,14 @@ public class TemplateEngineTests
     [Fact]
     public void TemplateEngineShouldWork()
     {
-        var str = @"{
-  ""userId"": ""text"",
-  ""otherText"": 1,
-  ""upper"": {{ uppercase 'test' }}""
-]
-}";
-        var template = TemplateEngine.CreateTemplate(str);
+        const string str = """
+                           {
+                             "userId": "text",
+                             "otherText": 1,
+                             "upper": {{ uppercase 'test' }}"
+                           }
+                           """;
+        var template = new TemplateGenerator().CreateTemplate(str);
         var result = template.Compile();
 
         Assert.NotNull(result );

@@ -48,7 +48,9 @@ internal class ArraysFunctionResolver : IFunctionResolver
         var selected = array.Values.OrderBy(_ => Guid.NewGuid()).Take(count).ToArray();
 
         return stringify
-            ? new ArrayReturn<ReturnType>(selected.Select(item => new StringReturn(item.GetValue().ToString()!)).ToArray())
+            ? new ArrayReturn<ReturnType>(selected
+                .Select(item => new StringReturn(item.GetValue().ToString()!))
+                .ToArray<ReturnType>())
             : new ArrayReturn<ReturnType>(selected);
     }
 

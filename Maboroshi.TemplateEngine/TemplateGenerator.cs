@@ -2,20 +2,22 @@
 
 namespace Maboroshi.TemplateEngine;
 
-public static class TemplateEngine
+public sealed class TemplateGenerator
 {
-    private static readonly IFunctionResolver[] _staticResolvers = [
-        new StringsFunctionResolver()
+    private static readonly IFunctionResolver[] StaticResolvers = [
+        new StringsFunctionResolver(),
+        new ArraysFunctionResolver(),
+        new FakerFunctionResolver(new StaticFakerAdapter())
     ];
 
-    public static Template CreateTemplate(string templateStr)
+    public Template CreateTemplate(string templateStr)
     {
         // TODO check if templateStr doesn't contain expression
         // TODO handle exceptions
         var lexer = new Lexer(templateStr);
         var nodes = new Parser(lexer.Tokenize().ToList()).Parse();
 
-        return new Template(nodes, templateStr, _staticResolvers);
+        return new Template(nodes, StaticResolvers);
     }
 }
 

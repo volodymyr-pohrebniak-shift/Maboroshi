@@ -1,6 +1,7 @@
 using Maboroshi.Web.Models;
 using Maboroshi.Web.Models.MatchingRules;
 using Maboroshi.Web.RouteMatching;
+using Maboroshi.TemplateEngine;
 
 namespace Maboroshi.Web;
 
@@ -67,8 +68,12 @@ public class RequestProcessor(IMockedRouteStore routesStore)
         {
             context.Response.Headers[header.Key] = header.Value;
         }
+        
+        var compiledResponse = !string.IsNullOrEmpty(selectedResponse.Body) 
+            ? GetResponseBody(context.Request.Path, selectedResponse.Body!) 
+            : selectedResponse.Body;
 
-        return new CustomResult(selectedResponse.StatusCode, selectedResponse.Headers.ToDictionary(x => x.Key, x => x.Value), selectedResponse.Body);
+        return new CustomResult(selectedResponse.StatusCode, selectedResponse.Headers.ToDictionary(x => x.Key, x => x.Value), compiledResponse);
     }
 
     private static Models.HttpMethod MapMethodFromRequest(string method) => method switch
@@ -89,6 +94,15 @@ public class RequestProcessor(IMockedRouteStore routesStore)
             QueryParameters = request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
             Headers = request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString()),
         };
+    }
+
+    private string GetResponseBody(string url, string templateString)
+    {
+        var templateEngine = new TemplateGenerator();
+        
+        var template = templateEngine.CreateTemplate(templateString);
+
+        return template.Compile();
     }
 }
 

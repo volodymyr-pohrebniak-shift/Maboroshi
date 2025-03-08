@@ -32,25 +32,30 @@ public class Template
     private readonly List<TemplateNode> _nodes;
     private readonly IFunctionResolver[] _functionResolvers;
 
-    internal Template(List<TemplateNode> nodes, string content, IFunctionResolver[] functionResolvers)
+    internal Template()
+    {
+        _nodes = [];
+        _functionResolvers = [];
+    }
+    
+    internal Template(List<TemplateNode> nodes, IFunctionResolver[] functionResolvers)
     {
         _nodes = nodes;
-        Content = content;
         _functionResolvers = functionResolvers;
     }
 
-    public string Content { get; }
-
-    public string Compile(params IFunctionResolver[] additionalFunctionResolvers)
+    public virtual string Compile(params IFunctionResolver[] additionalFunctionResolvers)
     {
-        var resolvers = _functionResolvers.Concat(additionalFunctionResolvers);
+        var templateContext = new TemplateContext();
+        var resolvers = _functionResolvers
+            .Concat(additionalFunctionResolvers)
+            .Append(new VariablesFunctionResolver(templateContext));
 
-        var templateNodeVisitor = new TemplateNodeVisitor(new TemplateContext(), resolvers);
+        var templateNodeVisitor = new TemplateNodeVisitor(templateContext, resolvers);
 
         var sb = new StringBuilder();
-        foreach(var node in _nodes)
+        foreach (var result in _nodes.Select(node => node.Accept(templateNodeVisitor)))
         {
-            var result = node.Accept(templateNodeVisitor);
             if (result is StringReturn str)
                 sb.Append(str);
         }

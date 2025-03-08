@@ -10,7 +10,7 @@ interface IFakerAdapter
     public ReturnType? GetFakeValue(string name, params ReturnType[] args);
 }
 
-internal class FakerAdapter : IFakerAdapter
+internal class StaticFakerAdapter : IFakerAdapter
 {
     private static readonly Faker _faker = new();
 

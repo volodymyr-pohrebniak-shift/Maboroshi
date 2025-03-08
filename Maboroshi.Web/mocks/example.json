@@ -57,6 +57,19 @@
               ]
             }
           ]
+        },
+        {
+          "urlTemplate": "/api/template/",
+          "httpMethod": "GET",
+          "responseSelectionStrategy": "default",
+          "responses": [
+            {
+              "name": "Response 1",
+              "statusCode": 200,
+              "body": "{\n    \"userId\": \"text\",\n    \"otherText\": 1,\n   \"upper\": {{ uppercase 'test' }}\"\n}",
+              "rules": []
+            }
+          ]
         }
       ]
     }
