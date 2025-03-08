@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 public abstract class SingleOperationMatchingRule(string? key, string? value, MatchingRuleOperation operation, bool negate) : IMatchingRule
 {
-    public virtual string Key { get; } = Guard.Against.NullOrWhiteSpace(key, nameof(key));
+    public string Key { get; } = Guard.Against.NullOrWhiteSpace(key, nameof(key));
     public string Value { get; } = value ?? string.Empty;
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public MatchingRuleOperation Operation { get; } = operation;

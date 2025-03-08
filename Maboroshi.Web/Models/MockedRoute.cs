@@ -1,16 +1,25 @@
-﻿namespace Maboroshi.Web.Models;
+﻿using Maboroshi.Web.RouteMatching;
 
-using Maboroshi.Web.Converters;
-using Maboroshi.Web.Utils;
+namespace Maboroshi.Web.Models;
+
+using Converters;
+using Utils;
 using System.Text.Json.Serialization;
 
 [method: JsonConstructor]
-public class MockedRoute(string url, HttpMethod httpMethod, IEnumerable<MockedRouteResponse> responses, ResponseSelectionStrategy responseSelectionStrategy)
+public class MockedRoute(
+    string urlTemplate,
+    HttpMethod httpMethod,
+    IEnumerable<MockedRouteResponse> responses,
+    ResponseSelectionStrategy responseSelectionStrategy)
 {
-    public string Url { get; } = Guard.Against.NullOrWhiteSpace(url, nameof(url));
+    public string UrlTemplate { get; } = Guard.Against.NullOrWhiteSpace(urlTemplate, nameof(urlTemplate));
+
     [JsonConverter(typeof(JsonHttpMethodConverter))]
     public HttpMethod HttpMethod { get; } = httpMethod;
-    public IEnumerable<MockedRouteResponse> Responses { get; } = Guard.Against.NullOrEmpty(responses, nameof(responses));
+
+    public IEnumerable<MockedRouteResponse> Responses { get; } = Guard.Against.Null(responses, nameof(responses));
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public ResponseSelectionStrategy ResponseSelectionStrategy { get; } = responseSelectionStrategy;
 }

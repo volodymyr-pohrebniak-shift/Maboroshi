@@ -15,6 +15,6 @@ public class RouteMatchingRule(string? key, string? value, MatchingRuleOperation
         if (input is not IRouteRuleInput routeRuleInput)
             throw new ArgumentException($"Invalid input type for {nameof(HeaderMatchingRule)}");
 
-        return routeRuleInput.RouteParameters.TryGetValue(Key, out var routeValue) && ApplyOperation(routeValue);
+        return ApplyOperation(routeRuleInput.RouteParameters.GetValueOrDefault(Key, string.Empty));
     }
 }

@@ -14,10 +14,13 @@ public record AggregateRule(IEnumerable<IMatchingRule> rules, AggregateRuleOpera
         {
             var result = rule.Evaluate(input);
 
-            if (op == AggregateRuleOperation.AND && !result)
-                return false;
-            if (op == AggregateRuleOperation.OR && result)
-                return true;
+            switch (op)
+            {
+                case AggregateRuleOperation.AND when !result:
+                    return false;
+                case AggregateRuleOperation.OR when result:
+                    return true;
+            }
         }
 
         return op == AggregateRuleOperation.AND;

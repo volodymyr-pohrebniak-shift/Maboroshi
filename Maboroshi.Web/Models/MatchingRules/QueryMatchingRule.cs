@@ -15,6 +15,6 @@ public class QueryMatchingRule(string? key, string? value, MatchingRuleOperation
         if (input is not IQueryRuleInput queryRuleInput)
             throw new ArgumentException($"Invalid input type for {nameof(HeaderMatchingRule)}");
 
-        return queryRuleInput.QueryParameters.TryGetValue(Key, out var queryValue) && ApplyOperation(queryValue);
+        return ApplyOperation(queryRuleInput.QueryParameters.GetValueOrDefault(Key, string.Empty));
     }
 }

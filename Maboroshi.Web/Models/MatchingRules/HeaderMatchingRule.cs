@@ -15,6 +15,6 @@ public class HeaderMatchingRule(string? key, string? value, MatchingRuleOperatio
         if (input is not IHeaderRuleInput headerRuleInput)
             throw new ArgumentException($"Invalid input type for {nameof(HeaderMatchingRule)}");
 
-        return headerRuleInput.Headers.TryGetValue(Key, out var headerValue) && ApplyOperation(headerValue);
+        return ApplyOperation(headerRuleInput.Headers.GetValueOrDefault(Key, string.Empty));
     }
 }

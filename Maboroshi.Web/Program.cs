@@ -1,150 +1,102 @@
 using Maboroshi.Web.Models;
 using Maboroshi.Web.Models.MatchingRules;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Concurrent;
-using System.Text.RegularExpressions;
+using Maboroshi.Web.RouteMatching;
 
-namespace Maboroshi.Web
+namespace Maboroshi.Web;
+
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
+        var builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.AddSingleton<IMockedRouteStore>((sp) =>
         {
-            var builder = WebApplication.CreateBuilder(args);
+            var root = new FileConfigurationParser(Path.Combine(builder.Environment.ContentRootPath, "mocks/example.json")).Parse();
+            return new InMemoryMockedRouteStore(root!.Environments.First().Routes, new UrlMatchingHandler(new UrlMatchinStrategyFactory()));
+        });
 
-            builder.Services.AddSingleton<IMockedRouteStore>((sp) =>
-            {
-                var root = new FileConfigurationParser(Path.Combine(builder.Environment.ContentRootPath, "mocks/example.json")).Parse();
-                return new InMemoryMockedRouteStore(root!.Environments.First().Routes);
-            });
+        builder.Services.AddScoped<RequestProcessor>();
 
-            builder.Services.AddScoped<RequestProcessor>();
+        var app = builder.Build();
 
-            var app = builder.Build();
+        app.Map("{**catchAll}", (HttpContext context, RequestProcessor requestProcessor) => requestProcessor.ProcessRequests(context));
 
-            app.Map("{**catchAll}", (HttpContext context, RequestProcessor requestProcessor) => requestProcessor.ProcessRequests(context));
-
-            app.Run();
-        }
+        app.Run();
     }
+}
 
-    public class RequestProcessor(IMockedRouteStore routesStore)
+public class RequestProcessor(IMockedRouteStore routesStore)
+{
+    public async Task<IResult> ProcessRequests(HttpContext context)
     {
-        public async Task<IResult> ProcessRequests(HttpContext context)
+        var route = routesStore.GetRouteByCriteria(context.Request.Path, MapMethodFromRequest(context.Request.Method));
+
+        if (route is null)
         {
-            var routes = routesStore.GetRoutesByCriteria(context.Request.Path, MapMethodFromRequest(context.Request.Method));
+            return Results.NotFound();
+        }
+        
+        MockedRouteResponse? selectedResponse = null;
 
-            if (!routes.Any())
+        var requestData = GetInputFromRequest(context.Request, route.UrlTemplate, context.Request.Path);
+        if (route.ResponseSelectionStrategy == ResponseSelectionStrategy.Default)
+        {
+            foreach (var response in route.Responses)
             {
-                return Results.NotFound();
-            }
-
-            var route = routes.First();
-            MockedRouteResponse? selectedResponse = null;
-
-            if (route.ResponseSelectionStrategy == ResponseSelectionStrategy.Default)
-            {
-                foreach (var response in route.Responses)
+                if (!response.Rules.Any())
                 {
-                    if (!response.Rules.Any())
-                    {
-                        selectedResponse = response;
-                        break;
-                    }
+                    selectedResponse = response;
+                    break;
+                }
 
-                    if (response.Rules.All(r => r.Evaluate(GetInputFromContext(context.Request, context.Request.Path))))
-                    {
-                        selectedResponse = response;
-                        break;
-                    }
+                if (response.Rules.All(r => r.Evaluate(requestData)))
+                {
+                    selectedResponse = response;
+                    break;
                 }
             }
-
-            if (selectedResponse is null)
-            {
-                return Results.NotFound();
-            }
-
-            foreach (var header in selectedResponse.Headers)
-            {
-                context.Response.Headers[header.Key] = header.Value;
-            }
-
-            return new CustomResult(selectedResponse.StatusCode, selectedResponse.Headers.ToDictionary(x => x.Key, x => x.Value), selectedResponse.Body);
         }
 
-        private static Models.HttpMethod MapMethodFromRequest(string method) => method switch
+        if (selectedResponse is null)
         {
-                "GET" => Models.HttpMethod.GET,
-                "POST" => Models.HttpMethod.POST,
-                "PUT" => Models.HttpMethod.PUT,
-                "DELETE" => Models.HttpMethod.DELETE,
-                "PATCH" => Models.HttpMethod.PATCH,
-                _ => Models.HttpMethod.GET
-            };
-
-        private static RuleInput GetInputFromContext(HttpRequest request, string path)
-        {
-            return new RuleInput()
-            {
-                RouteParameters = [],
-                QueryParameters = request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
-                Headers = request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString()),
-            };
+            return Results.NotFound();
         }
+
+        foreach (var header in selectedResponse.Headers)
+        {
+            context.Response.Headers[header.Key] = header.Value;
+        }
+
+        return new CustomResult(selectedResponse.StatusCode, selectedResponse.Headers.ToDictionary(x => x.Key, x => x.Value), selectedResponse.Body);
     }
 
-    public interface IMockedRouteStore
+    private static Models.HttpMethod MapMethodFromRequest(string method) => method switch
     {
-        IEnumerable<MockedRoute> GetRoutesByCriteria(string url, Models.HttpMethod method);
-    }
+            "GET" => Models.HttpMethod.GET,
+            "POST" => Models.HttpMethod.POST,
+            "PUT" => Models.HttpMethod.PUT,
+            "DELETE" => Models.HttpMethod.DELETE,
+            "PATCH" => Models.HttpMethod.PATCH,
+            _ => Models.HttpMethod.GET
+        };
 
-    public class InMemoryMockedRouteStore : IMockedRouteStore
+    private static RuleInput GetInputFromRequest(HttpRequest request, string urlTemplate, string path)
     {
-        private readonly ConcurrentBag<MockedRoute> _routes;
-
-        public InMemoryMockedRouteStore(IEnumerable<MockedRoute> routes) {
-            _routes = new(routes);
-        }
-
-        public void AddRoute(MockedRoute route)
+        return new RuleInput()
         {
-            _routes.Add(route);
-        }
-
-        public IEnumerable<MockedRoute> GetRoutesByCriteria(string url, Models.HttpMethod method)
-        {
-            return _routes.Where(route => (route.HttpMethod & method) != 0 && UrlMatchesTemplate(url, route.Url));
-        }
-
-        private static bool UrlMatchesTemplate(string url, string template)
-        {
-            // TODO write proper url to regex converter
-            var pattern = "^" + Regex.Escape(template)
-                // Replace dynamic segments like :id with named capture groups
-                .Replace(@"\:", "(?<")
-                // Allow parameters to be separated by /, -, or .
-                .Replace(@")", @">[^/.-]+)")
-                // Handle optional segments like (cd)?
-                .Replace(@"\\\(", "(")
-                .Replace(@"\\\)", ")")
-                .Replace(@"\\\?", "?")
-                // Replace wildcard * with .* to match any sequence of characters
-                .Replace(@"\\\*", ".*")
-                + "$"; // Ensure full match from start to end
-
-            // Check if the provided URL matches the constructed regex pattern
-            return Regex.IsMatch(url, pattern);
-        }
+            RouteParameters = UrlParameterExtractor.Extract(urlTemplate, path),
+            QueryParameters = request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
+            Headers = request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString()),
+        };
     }
+}
 
-    public enum MatchingRuleType
-    {
-        Header,
-        Route,
-        Query,
-        Cookie,
-        Body
-    }
+public enum MatchingRuleType
+{
+    Header,
+    Route,
+    Query,
+    Cookie,
+    Body
 }

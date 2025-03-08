@@ -4,7 +4,7 @@
       "name": "default",
       "routes": [
         {
-          "url": "/api/test",
+          "urlTemplate": "/api/test/",
           "httpMethod": "GET",
           "responseSelectionStrategy": "default",
           "responses": [
@@ -17,7 +17,7 @@
           ]
         },
         {
-          "url": "/api/parameters/:id",
+          "urlTemplate": "/api/parameters/{id}",
           "httpMethod": "GET, POST",
           "responseSelectionStrategy": "default",
           "responses": [
