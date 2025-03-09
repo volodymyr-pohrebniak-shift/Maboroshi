@@ -2,7 +2,7 @@
 
 namespace Maboroshi.TemplateEngine;
 
-public sealed class TemplateGenerator
+public static class TemplateGenerator
 {
     private static readonly IFunctionResolver[] StaticResolvers = [
         new StringsFunctionResolver(),
@@ -10,7 +10,7 @@ public sealed class TemplateGenerator
         new FakerFunctionResolver(new StaticFakerAdapter())
     ];
 
-    public Template CreateTemplate(string templateStr)
+    public static Template CreateTemplate(string templateStr)
     {
         // TODO check if templateStr doesn't contain expression
         // TODO handle exceptions

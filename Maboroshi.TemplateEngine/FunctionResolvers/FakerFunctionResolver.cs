@@ -12,7 +12,7 @@ internal class FakerFunctionResolver(IFakerAdapter fakerAdapter) : IFunctionReso
             "int" => _fakerAdapter.GetFakeValue("random.number", additionalArguments),
             "float" => _fakerAdapter.GetFakeValue("random.float", additionalArguments),
             "bool" => _fakerAdapter.GetFakeValue("random.bool", additionalArguments),
-            _ => throw new NotImplementedException(),
+            _ => null,
         };
     }
 

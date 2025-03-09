@@ -49,7 +49,8 @@ public class Template
         var templateContext = new TemplateContext();
         var resolvers = _functionResolvers
             .Concat(additionalFunctionResolvers)
-            .Append(new VariablesFunctionResolver(templateContext));
+            .Append(new VariablesFunctionResolver(templateContext))
+            .ToList();
 
         var templateNodeVisitor = new TemplateNodeVisitor(templateContext, resolvers);
 

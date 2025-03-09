@@ -12,7 +12,7 @@ public class TemplateEngineTests
                              "upper": {{ uppercase 'test' }}"
                            }
                            """;
-        var template = new TemplateGenerator().CreateTemplate(str);
+        var template = TemplateGenerator.CreateTemplate(str);
         var result = template.Compile();
 
         Assert.NotNull(result );
