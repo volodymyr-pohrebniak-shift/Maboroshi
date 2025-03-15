@@ -18,6 +18,7 @@ public class FileConfigurationParser(string filePath) : IConfigurationParser
         Converters = { new JsonMatchingRuleConverter() },
         PropertyNameCaseInsensitive = true,
         UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
+        UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
     };
     private readonly string _filePath = Guard.Against.NullOrWhiteSpace(filePath);
 

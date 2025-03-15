@@ -10,6 +10,7 @@
           "urlTemplate": "/api/test/",
           "httpMethod": "GET",
           "responseSelectionStrategy": "default",
+          "allowResponseCaching": true,
           "responses": [
             {
               "id": 1,
@@ -30,6 +31,7 @@
               "id": 1,
               "name": "Response 1",
               "statusCode": 200,
+              "allowResponseCaching": true,
               "body": "{\"response\": \"Authorized\"}",
               "rules": [
                 {
@@ -53,6 +55,7 @@
               "name": "Response 2",
               "statusCode": 401,
               "body": "{\"response\": \"Not Authorized\"}",
+              "allowResponseCaching": true,
               "rules": [
                 {
                   "type": "Header",
@@ -67,7 +70,7 @@
         },
         {
           "id": 3,
-          "urlTemplate": "/api/template/",
+          "urlTemplate": "/api/template/{id?}",
           "httpMethod": "GET",
           "responseSelectionStrategy": "default",
           "responses": [
@@ -75,8 +78,9 @@
               "id": 1,
               "name": "Response 1",
               "statusCode": 200,
-              "body": "{\n    \"userId\": \"text\",\n    \"otherText\": 1,\n   \"upper\": {{ uppercase 'test' }}\"\n}",
-              "rules": []
+              "body": "{\n    \"userId\": \"text\",\n    \"otherText\": 1,\n   \"upper\": \"{{ uppercase 'test' }}\",\n   \"id\": {{urlParam 'id'}}\n}",
+              "rules": [],
+              "allowResponseCaching": true
             }
           ]
         }
