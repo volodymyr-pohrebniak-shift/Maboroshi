@@ -18,4 +18,9 @@ public class InMemoryMockedRouteStore(IEnumerable<MockedRoute> routes, IUrlMatch
     {
         return _routes.FirstOrDefault(route => (route.HttpMethod & method) != 0 && urlMatchingHandler.MatchesRoute(route.UrlTemplate, url));
     }
+
+    public IEnumerable<MockedRoute> GetAll()
+    {
+        return _routes;
+    }
 }

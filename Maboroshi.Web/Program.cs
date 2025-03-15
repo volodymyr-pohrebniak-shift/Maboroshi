@@ -21,7 +21,17 @@ public class Program
 
         var app = builder.Build();
 
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
+
+        app.MapGet("/$$$SYSTEM$$$/environments", (IMockedRouteStore routesStore) =>
+        {
+            return routesStore.GetAll();
+        });
+
         app.Map("{**catchAll}", (HttpContext context, RequestProcessor requestProcessor) => requestProcessor.ProcessRequests(context));
+
+        //app.MapFallbackToFile("/index.html");
 
         app.Run();
     }

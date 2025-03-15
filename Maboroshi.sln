@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Maboroshi.TemplateEngine", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Maboroshi.TemplateEngine.UnitTests", "Maboroshi.TemplateEngine.UnitTests\Maboroshi.TemplateEngine.UnitTests.csproj", "{49BA1951-87F2-4CBC-8AF3-F91A09AD4909}"
 EndProject
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "maroboshi.reactclient", "Maroboshi.ReactClient\maroboshi.reactclient.esproj", "{56788444-13E1-9D7E-2940-9C360CED7B92}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,12 @@ Global
 		{49BA1951-87F2-4CBC-8AF3-F91A09AD4909}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49BA1951-87F2-4CBC-8AF3-F91A09AD4909}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{49BA1951-87F2-4CBC-8AF3-F91A09AD4909}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56788444-13E1-9D7E-2940-9C360CED7B92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56788444-13E1-9D7E-2940-9C360CED7B92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56788444-13E1-9D7E-2940-9C360CED7B92}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{56788444-13E1-9D7E-2940-9C360CED7B92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56788444-13E1-9D7E-2940-9C360CED7B92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56788444-13E1-9D7E-2940-9C360CED7B92}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

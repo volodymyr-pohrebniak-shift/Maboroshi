@@ -32,10 +32,11 @@ const mockData: Environment[] = [
   },
 ];
 
-export const fetchInitialState = (): Promise<Environment[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(mockData);
-    }, 1000);
-  });
+export const fetchInitialState = async () => {
+    const response = await fetch('$$$SYSTEM$$$/environments');
+    if (response.ok) {
+        const data = await response.json();
+        console.log(data);
+        return data;
+    }
 };

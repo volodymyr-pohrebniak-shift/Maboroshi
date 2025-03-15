@@ -6,10 +6,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>f9841042-95d2-4c49-80b8-111f3d7b7864</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+	<SpaRoot>..\maroboshi.reactclient</SpaRoot>
+	<SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
+	<SpaProxyServerUrl>https://localhost:56859</SpaProxyServerUrl>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
+	  <PackageReference Include="Microsoft.AspNetCore.SpaProxy">
+		  <Version>8.*-*</Version>
+	  </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -20,6 +26,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Maboroshi.TemplateEngine\Maboroshi.TemplateEngine.csproj" />
+	  <ProjectReference Include="..\maroboshi.reactclient\maroboshi.reactclient.esproj">
+		  <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+	  </ProjectReference>
   </ItemGroup>
 
 </Project>

@@ -2,13 +2,17 @@
   "environments": [
     {
       "name": "default",
+      "id": 1,
+      "active": true,
       "routes": [
         {
+          "id":  1,
           "urlTemplate": "/api/test/",
           "httpMethod": "GET",
           "responseSelectionStrategy": "default",
           "responses": [
             {
+              "id": 1,
               "name": "Response 1",
               "statusCode": 200,
               "body": "{\"response\": \"Hello world\"}",
@@ -17,11 +21,13 @@
           ]
         },
         {
+          "id": 2,
           "urlTemplate": "/api/parameters/{id}",
           "httpMethod": "GET, POST",
           "responseSelectionStrategy": "default",
           "responses": [
             {
+              "id": 1,
               "name": "Response 1",
               "statusCode": 200,
               "body": "{\"response\": \"Authorized\"}",
@@ -43,6 +49,7 @@
               ]
             },
             {
+              "id": 2,
               "name": "Response 2",
               "statusCode": 401,
               "body": "{\"response\": \"Not Authorized\"}",
@@ -59,11 +66,13 @@
           ]
         },
         {
+          "id": 3,
           "urlTemplate": "/api/template/",
           "httpMethod": "GET",
           "responseSelectionStrategy": "default",
           "responses": [
             {
+              "id": 1,
               "name": "Response 1",
               "statusCode": 200,
               "body": "{\n    \"userId\": \"text\",\n    \"otherText\": 1,\n   \"upper\": {{ uppercase 'test' }}\"\n}",

@@ -1,0 +1,12 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003ARouteValueDictionary_002Ecs_002Fl_003A_002E_002E_003F_002E_002E_003FUsers_003Fvolodymyr_002Epohrebniak_003FAppData_003FRoaming_003FJetBrains_003FRider2024_002E3_003Fresharper_002Dhost_003FSourcesCache_003F97e2f9247a7b56f7c95e5c2cefa5571785c406501286237da07928fa347775_003FRouteValueDictionary_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
+	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003AServiceCollectionServiceExtensions_002Ecs_002Fl_003A_002E_002E_003F_002E_002E_003FUsers_003Fvolodymyr_002Epohrebniak_003FAppData_003FRoaming_003FJetBrains_003FRider2024_002E3_003Fresharper_002Dhost_003FSourcesCache_003F24dd1164ba47541cb1d3eb011e638e16953dbea3ae3f4dc208c3bbf3e96298a_003FServiceCollectionServiceExtensions_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=c140d584_002D2cb2_002D4923_002Db601_002Df8794981a4cf/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="All tests from UrlMatchingTests.cs" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;Or&gt;&#xD;
+    &lt;ProjectFile&gt;00E35FBF-AC8A-4FC1-9BE7-A3BF15A76EC6/f:UrlMatchingTests.cs&lt;/ProjectFile&gt;&#xD;
+    &lt;TestAncestor&gt;&#xD;
+      &lt;TestId&gt;xUnit::00E35FBF-AC8A-4FC1-9BE7-A3BF15A76EC6::net8.0::Maboroshi.UnitTests.MatchingRules.SingleOperationMatchingRuleTests.MatchingRule_ShouldEvaluate_Query&lt;/TestId&gt;&#xD;
+    &lt;/TestAncestor&gt;&#xD;
+    &lt;ProjectFolder&gt;00E35FBF-AC8A-4FC1-9BE7-A3BF15A76EC6/d:MatchingRules&lt;/ProjectFolder&gt;&#xD;
+  &lt;/Or&gt;&#xD;
+&lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
