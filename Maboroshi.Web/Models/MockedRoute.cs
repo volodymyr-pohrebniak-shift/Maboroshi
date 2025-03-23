@@ -1,6 +1,4 @@
-﻿using Maboroshi.Web.RouteMatching;
-
-namespace Maboroshi.Web.Models;
+﻿namespace Maboroshi.Web.Models;
 
 using Converters;
 using Utils;
@@ -11,7 +9,8 @@ public class MockedRoute(
     string urlTemplate,
     HttpMethod httpMethod,
     IEnumerable<MockedRouteResponse> responses,
-    ResponseSelectionStrategy responseSelectionStrategy)
+    ResponseSelectionStrategy responseSelectionStrategy,
+    bool enabled)
 {
     public string UrlTemplate { get; } = Guard.Against.NullOrWhiteSpace(urlTemplate, nameof(urlTemplate));
 
@@ -22,6 +21,8 @@ public class MockedRoute(
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public ResponseSelectionStrategy ResponseSelectionStrategy { get; } = responseSelectionStrategy;
+
+    public bool Enabled { get; } = enabled;
 }
 
 public enum ResponseSelectionStrategy

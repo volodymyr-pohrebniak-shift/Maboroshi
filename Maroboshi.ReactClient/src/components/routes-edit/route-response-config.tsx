@@ -15,17 +15,10 @@ import {
   selectedRouteIdAtom,
   selectedResponseIdAtom,
 } from "../../state/atoms";
-
-const HTTP_STATUS_CODES = [
-  { code: "200", name: "OK" },
-  { code: "201", name: "Created" },
-  { code: "204", name: "No Content" },
-  { code: "400", name: "Bad Request" },
-  { code: "401", name: "Unauthorized" },
-  { code: "403", name: "Forbidden" },
-  { code: "404", name: "Not Found" },
-  { code: "500", name: "Internal Server Error" },
-];
+import { HTTP_STATUS_CODES } from "../../data";
+import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
+import React from "react";
+import { SelectGroup, SelectLabel, SelectSeparator } from "@radix-ui/react-select";
 
 export function ResponseConfig() {
   const [environments, setEnvironments] = useAtom(environmentsAtom);
@@ -79,15 +72,29 @@ export function ResponseConfig() {
           value={selectedResponse.statusCode}
           onValueChange={(value) => updateResponse({ statusCode: value })}
         >
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Select status code" />
           </SelectTrigger>
-          <SelectContent>
-            {HTTP_STATUS_CODES.map((status) => (
-              <SelectItem key={status.code} value={status.code}>
-                {status.code} - {status.name}
-              </SelectItem>
-            ))}
+          <SelectContent className="p-4">
+            {Object.entries(HTTP_STATUS_CODES).map(
+              ([key, group], index, arr) => (
+                <React.Fragment key={key}>
+                  <SelectGroup>
+                    <SelectLabel className="pb-3 text-sm font-bold text-gray-600">
+                      {group.label}
+                    </SelectLabel>
+                    {group.codes.map(({ code, name }) => (
+                      <SelectItem key={code} value={code}>
+                        <span className="text-base">{code} – {name}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                  {index < arr.length - 1 && (
+                    <SelectSeparator className="pb-3" />
+                  )}
+                </React.Fragment>
+              )
+            )}
           </SelectContent>
         </Select>
       </div>

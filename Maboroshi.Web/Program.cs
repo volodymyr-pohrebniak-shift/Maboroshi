@@ -1,3 +1,4 @@
+using Maboroshi.Web.Models;
 using Maboroshi.Web.RouteMatching;
 using Maboroshi.Web.Templates;
 
@@ -9,11 +10,11 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddSingleton<IMockedRouteStore>((sp) =>
-        {
-            var root = new FileConfigurationParser(Path.Combine(builder.Environment.ContentRootPath, "mocks/example.json")).Parse();
-            return new InMemoryMockedRouteStore(root!.Environments.First().Routes, new UrlMatchingHandler(new UrlMatchinStrategyFactory()));
-        });
+        var root = new FileConfigurationParser(Path.Combine(builder.Environment.ContentRootPath, "mocks/example.json")).Parse();
+
+        builder.Services.AddSingleton<IMockedRouteStore>((_) => new InMemoryMockedRouteStore(root!.Environments.First().Routes, new UrlMatchingHandler(new UrlMatchinStrategyFactory())));
+
+        builder.Services.AddSingleton((_) => new EnvironmentsProvider(root!));
 
         builder.Services.AddMemoryCache();
         builder.Services.AddScoped<RequestProcessor>();
@@ -24,15 +25,22 @@ public static class Program
         app.UseDefaultFiles();
         app.UseStaticFiles();
 
-        app.MapGet("/$$$SYSTEM$$$/environments", (IMockedRouteStore routesStore) =>
-        {
-            return routesStore.GetAll();
-        });
+        app.MapGet("/$$$SYSTEM$$$/environments", (EnvironmentsProvider environmentsProvider) => environmentsProvider.GetEnvironments());
 
         app.Map("{**catchAll}", (HttpContext context, RequestProcessor requestProcessor) => requestProcessor.Process(context));
 
         //app.MapFallbackToFile("/index.html");
 
         app.Run();
+    }
+}
+
+class EnvironmentsProvider(Root root)
+{
+    private Root root = root;
+
+    public IEnumerable<Models.Environment> GetEnvironments()
+    {
+        return root.Environments;
     }
 }

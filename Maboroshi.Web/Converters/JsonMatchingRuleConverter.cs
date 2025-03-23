@@ -40,7 +40,7 @@ public class JsonMatchingRuleConverter : JsonConverter<IMatchingRule>
     public override void Write(Utf8JsonWriter writer, IMatchingRule value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
-
+        /*
         switch (value)
         {
             case SingleOperationMatchingRule singleRule:
@@ -58,7 +58,7 @@ public class JsonMatchingRuleConverter : JsonConverter<IMatchingRule>
                 writer.WriteString("op", aggregateRule.op.ToString());
                 break;
         }
-
+        */
         writer.WriteEndObject();
     }
 }

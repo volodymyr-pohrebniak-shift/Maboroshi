@@ -4,15 +4,13 @@ using Maboroshi.Web.Utils;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
-public abstract class SingleOperationMatchingRule(string? key, string? value, MatchingRuleOperation operation, bool negate) : IMatchingRule
+public abstract class SingleOperationMatchingRule(string? key, string? value, MatchingRuleOperation operation, bool negate) : BaseMatchingRule
 {
     public string Key { get; } = Guard.Against.NullOrWhiteSpace(key, nameof(key));
     public string Value { get; } = value ?? string.Empty;
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public MatchingRuleOperation Operation { get; } = operation;
     public bool Negate { get; } = negate;
-
-    public abstract bool Evaluate(IRuleInput input);
 
     protected bool ApplyOperation(string? input)
     {

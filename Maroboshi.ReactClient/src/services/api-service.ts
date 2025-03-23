@@ -1,42 +1,27 @@
-import { Environment } from "../state/atoms";
-
-const mockData: Environment[] = [
-  {
-    id: "1",
-    name: "Development",
-    routes: [
-      {
-        id: "1",
-        path: "/api/users",
-        methods: ["GET", "POST"],
-        enabled: true,
-        responses: [
-          {
-            id: "1",
-            name: "Success",
-            statusCode: "200",
-            body: '{"message": "Success"}',
-            headers: [
-              { id: "1", key: "Content-Type", value: "application/json" },
-            ],
-            rules: [],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "2",
-    name: "Production",
-    routes: [],
-  },
-];
+import { v4 as uuidv4 } from 'uuid';
 
 export const fetchInitialState = async () => {
     const response = await fetch('$$$SYSTEM$$$/environments');
     if (response.ok) {
         const data = await response.json();
-        console.log(data);
-        return data;
+        console.log(addClientIds(data));
+        return addClientIds(data);
     }
 };
+
+function addClientIds<T>(data: T): T {
+  if (Array.isArray(data)) {
+    return data.map(item => addClientIds(item)) as T;
+  } else if (typeof data === 'object' && data !== null) {
+    const newObj: any = { ...data, id: uuidv4() };
+
+    for (const key in newObj) {
+      if (Array.isArray(newObj[key]) || typeof newObj[key] === 'object') {
+        newObj[key] = addClientIds(newObj[key]);
+      }
+    }
+    return newObj;
+  }
+
+  return data;
+}

@@ -1,50 +1,67 @@
-import { atom } from 'jotai'
+import { atom } from "jotai";
 
-export type Rule = {
-  id: string
-  type: string
-  key: string
-  operation: string
-  value: string
-  negate: boolean
-}
+export type RuleCondition = "AND" | "OR";
+
+export type BaseRule = {
+  type: string;
+  id: string;
+};
+
+export type SimpleRule = BaseRule & {
+  type: "Header" | "Query" | "Cookie " | "Body" | "Route";
+  key: string;
+  operation: string;
+  value: string;
+  negate: boolean;
+};
+
+export type RuleGroup = BaseRule & {
+  type: "Aggregate";
+  op: RuleCondition;
+  rules: Rule[];
+};
+
+export type Rule = SimpleRule | RuleGroup;
 
 export type Header = {
-  id: string
-  key: string
-  value: string
-}
+  id: string;
+  key: string;
+  value: string;
+};
 
 export type Response = {
-  id: string
-  name: string
-  statusCode: string
-  body: string
-  headers: Header[]
-  rules: Rule[]
-}
+  id: string;
+  name: string;
+  statusCode: number;
+  body: string;
+  headers: Header[];
+  rules: Rule[];
+  description?: string;
+};
 
 export type Route = {
-  id: string
-  path: string
-  methods: string[]
-  responses: Response[]
-  enabled: boolean
-}
+  id: string;
+  urlTemplate: string;
+  httpMethod: string[];
+  responses: Response[];
+  enabled: boolean;
+  responseSelectionStrategy: ResponseSelectionStrategy;
+};
+
+export type ResponseSelectionStrategy = "Default" | "Random" | "Sequence";
 
 export type Environment = {
-  id: string
-  name: string
-  routes: Route[]
-}
+  id: string;
+  name: string;
+  routes: Route[];
+};
 
-const initialState: Environment[] = []
+const initialState: Environment[] = [];
 
-export const environmentsAtom = atom<Environment[]>(initialState)
+export const environmentsAtom = atom<Environment[]>(initialState);
 
-export const selectedEnvironmentIdAtom = atom<string | null>(null)
+export const selectedEnvironmentIdAtom = atom<string | null>(null);
 
-export const selectedRouteIdAtom = atom<string | null>(null)
+export const selectedRouteIdAtom = atom<string | null>(null);
 
-export const selectedResponseIdAtom = atom<string | null>(null)
-
+export const selectedResponseIdAtom = atom<string | null>(null);

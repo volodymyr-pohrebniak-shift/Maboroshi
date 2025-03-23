@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MoreHorizontal, PlusCircle, Search } from "lucide-react";
+import { v4 as uuidv4 } from 'uuid';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +12,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   environmentsAtom,
+  Route,
   selectedEnvironmentIdAtom,
+  selectedResponseIdAtom,
   selectedRouteIdAtom,
 } from "../state/atoms";
 
@@ -19,6 +22,9 @@ export function RouteSidebar() {
   const [environments, setEnvironments] = useAtom(environmentsAtom);
   const [selectedEnvironmentId] = useAtom(selectedEnvironmentIdAtom);
   const [selectedRouteId, setSelectedRouteId] = useAtom(selectedRouteIdAtom);
+  const [_, setSelectedResponseId] = useAtom(
+      selectedResponseIdAtom
+    );
 
   const selectedEnvironment = environments.find(
     (env) => env.id === selectedEnvironmentId
@@ -27,12 +33,22 @@ export function RouteSidebar() {
 
   const addNewRoute = () => {
     if (selectedEnvironmentId) {
-      const newRoute = {
-        id: Date.now().toString(),
-        path: "/api/new-route",
-        methods: ["GET"],
-        responses: [],
+      const newRoute: Route = {
+        id: uuidv4(),
+        urlTemplate: `/api/new-route-${routes.length + 1}`,
+        httpMethod: ["GET"],
+        responses: [
+          {
+            id: uuidv4(),
+            body: '',
+            headers: [],
+            rules: [],
+            statusCode: 200,
+            name: 'Response 1'
+          }
+        ],
         enabled: true,
+        responseSelectionStrategy: "Default"
       };
       setEnvironments(
         environments.map((env) =>
@@ -66,8 +82,8 @@ export function RouteSidebar() {
     if (routeToDuplicate) {
       const newRoute = {
         ...routeToDuplicate,
-        id: Date.now().toString(),
-        path: `${routeToDuplicate.path}-copy`,
+          id: Date.now().toString(),
+          urlTemplate: `${routeToDuplicate.urlTemplate}-copy`,
       };
       setEnvironments(
         environments.map((env) =>
@@ -112,9 +128,12 @@ export function RouteSidebar() {
                 className={`w-full justify-start ${
                   route.enabled ? "" : "opacity-50"
                 }`}
-                onClick={() => setSelectedRouteId(route.id)}
+                onClick={() => {
+                  setSelectedRouteId(route.id);
+                  setSelectedResponseId(route.responses[0]?.id ?? null);
+                }}
               >
-                {route.path}
+                {route.urlTemplate}
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

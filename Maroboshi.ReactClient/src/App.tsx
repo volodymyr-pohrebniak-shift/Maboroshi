@@ -12,7 +12,6 @@ function App() {
   const [, setEnvironments] = useAtom(environmentsAtom);
 
   useEffect(() => {
-    console.log('here');
     fetchInitialState().then(setEnvironments);
   }, [setEnvironments]);
 

@@ -3,9 +3,9 @@
 using System.Text.Json.Serialization;
 
 [method: JsonConstructor]
-public record AggregateRule(IEnumerable<IMatchingRule> rules, AggregateRuleOperation op) : IMatchingRule
+public class AggregateRule(IEnumerable<IMatchingRule> rules, AggregateRuleOperation op) : BaseMatchingRule
 {
-    public bool Evaluate(IRuleInput input)
+    public override bool Evaluate(IRuleInput input)
     {
         if (!rules.Any())
             return false;
