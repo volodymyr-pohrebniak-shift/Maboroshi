@@ -18,7 +18,7 @@ public class TemplateContext
 
     public ReturnType GetVariable(string name)
     {
-        for (var i = _contexts.Count - 1; i <= 0; i--)
+        for (var i = _contexts.Count - 1; i >= 0; i--)
         {
             if (_contexts[i].TryGetValue(name, out var ret))
                 return ret;

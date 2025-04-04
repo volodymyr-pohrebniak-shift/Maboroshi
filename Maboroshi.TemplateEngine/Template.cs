@@ -9,6 +9,16 @@ public abstract record ReturnType
     public abstract object GetValue();
 }
 
+public sealed record BoolReturn : ReturnType
+{
+    public bool Value { get; }
+    public BoolReturn(bool value) => Value = value;
+    public override object GetValue() => Value;
+    public static implicit operator BoolReturn(bool value) => new(value);
+
+    public static implicit operator bool(BoolReturn result) => result.Value;
+}
+
 public sealed record StringReturn : ReturnType
 {
     public string Value { get; }
