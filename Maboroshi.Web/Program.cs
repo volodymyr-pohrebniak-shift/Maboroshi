@@ -1,4 +1,3 @@
-using Maboroshi.Web.Models;
 using Maboroshi.Web.RouteMatching;
 using Maboroshi.Web.Templates;
 
@@ -10,11 +9,18 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        var root = new FileConfigurationParser(Path.Combine(builder.Environment.ContentRootPath, "mocks/example.json")).Parse();
+        builder.Services.AddSingleton<UrlMatchinStrategyFactory>();
+        builder.Services.AddSingleton<IUrlMatchingHandler, UrlMatchingHandler>();
+        builder.Services.AddSingleton<IMockedRouteStore, InMemoryMockedRouteStore>();
 
-        builder.Services.AddSingleton<IMockedRouteStore>((_) => new InMemoryMockedRouteStore(root!.Environments.First().Routes, new UrlMatchingHandler(new UrlMatchinStrategyFactory())));
-
-        builder.Services.AddSingleton((_) => new EnvironmentsProvider(root!));
+        builder.Services.AddSingleton<EnvironmentsProvider>((IServiceProvider serviceProvider) =>
+        {
+            var root = new FileConfigurationParser(Path.Combine(builder.Environment.ContentRootPath, "mocks/example.json")).Parse();
+            var mockService = serviceProvider.GetRequiredService<IMockedRouteStore>();
+            var provider = new EnvironmentsProvider(mockService);
+            provider.SetEnvironments(root!.Environments.ToArray());
+            return provider;
+        });
 
         builder.Services.AddMemoryCache();
         builder.Services.AddScoped<RequestProcessor>();
@@ -27,6 +33,11 @@ public static class Program
 
         app.MapGet("/$$$SYSTEM$$$/environments", (EnvironmentsProvider environmentsProvider) => environmentsProvider.GetEnvironments());
 
+        app.MapPut("/$$$SYSTEM$$$/environments", (Models.Environment[] environtments, EnvironmentsProvider environmentsProvider) => {
+            environmentsProvider.SetEnvironments(environtments);
+            Results.Ok();
+        });
+
         app.Map("{**catchAll}", (HttpContext context, RequestProcessor requestProcessor) => requestProcessor.Process(context));
 
         //app.MapFallbackToFile("/index.html");
@@ -35,12 +46,23 @@ public static class Program
     }
 }
 
-class EnvironmentsProvider(Root root)
+class EnvironmentsProvider(IMockedRouteStore routesStore)
 {
-    private Root root = root;
+    private List<Models.Environment> _environments = [];
+
+    public void SetEnvironments(Models.Environment[] environments)
+    {
+        _environments = [.. environments];
+
+        if (_environments.Count > 0)
+        {
+            var activeEnv = _environments.FirstOrDefault(x => x.IsActive) ?? _environments[0];
+            routesStore.SetRoutes(activeEnv.Routes);
+        }
+    }
 
     public IEnumerable<Models.Environment> GetEnvironments()
     {
-        return root.Environments;
+        return _environments;
     }
 }

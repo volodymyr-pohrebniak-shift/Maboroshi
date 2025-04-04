@@ -4,14 +4,14 @@ using Maboroshi.Web.RouteMatching;
 
 namespace Maboroshi.Web;
 
-public class InMemoryMockedRouteStore(IEnumerable<MockedRoute> routes, IUrlMatchingHandler urlMatchingHandler)
+public class InMemoryMockedRouteStore(IUrlMatchingHandler urlMatchingHandler)
     : IMockedRouteStore
 {
-    private ConcurrentBag<MockedRoute> _routes = new(routes);
+    private ConcurrentBag<MockedRoute> _routes = [];
 
     public void SetRoutes(IEnumerable<MockedRoute> routes)
     {
-        _routes = new ConcurrentBag<MockedRoute>(routes);
+        _routes = [.. routes];
     }
 
     public MockedRoute? GetRouteByCriteria(string url, Models.HttpMethod method)

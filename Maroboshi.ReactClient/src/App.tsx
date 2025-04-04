@@ -7,6 +7,7 @@ import { RouteSidebar } from "./components/route-sidebar";
 import { RouteConfig } from "./components/routes-edit/route-config";
 import { environmentsAtom } from "./state/atoms";
 import { fetchInitialState } from "./services/api-service";
+import { Toaster } from "./components/ui/toaster";
 
 function App() {
   const [, setEnvironments] = useAtom(environmentsAtom);
@@ -27,6 +28,7 @@ function App() {
           </main>
         </div>
       </div>
+      <Toaster />
     </ThemeProvider>
   );
 }
