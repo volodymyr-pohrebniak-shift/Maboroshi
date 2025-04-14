@@ -27,16 +27,16 @@ public class StringsFunctionResolverTests
     public void Includes_ShouldReturnTrue_WhenSubstringExists()
     {
         var result = _resolver.TryResolve("includes", new StringReturn("hello world"), new StringReturn("world"));
-        result.Should().BeOfType<StringReturn>()
-              .Which.Value.Should().Be("True");
+        result.Should().BeOfType<BoolReturn>()
+              .Which.Value.Should().Be(true);
     }
 
     [Fact]
     public void Includes_ShouldReturnFalse_WhenSubstringDoesNotExist()
     {
         var result = _resolver.TryResolve("includes", new StringReturn("hello world"), new StringReturn("abc"));
-        result.Should().BeOfType<StringReturn>()
-              .Which.Value.Should().Be("False");
+        result.Should().BeOfType<BoolReturn>()
+              .Which.Value.Should().Be(false);
     }
 
     [Fact]

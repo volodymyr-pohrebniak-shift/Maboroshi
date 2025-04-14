@@ -30,14 +30,14 @@ internal class StringsFunctionResolver : IFunctionResolver
         return str.Value.ToUpper();
     }
 
-    private static StringReturn Includes(ReturnType[] arguments)
+    private static BoolReturn Includes(ReturnType[] arguments)
     {
         if (arguments.Length < 2)
             throw new Exception("Includes function requires two parameters (string, searchValue)");
         if (arguments[0] is not StringReturn str || arguments[1] is not StringReturn search)
             throw new Exception("Both parameters must be strings");
 
-        return str.Value.Contains(search).ToString();
+        return str.Value.Contains(search);
     }
 
     private static StringReturn Substr(ReturnType[] arguments)

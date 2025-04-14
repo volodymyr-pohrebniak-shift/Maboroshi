@@ -9,9 +9,35 @@ internal class FakerFunctionResolver(IFakerAdapter fakerAdapter) : IFunctionReso
         return functionName switch
         {
             "faker" => GetFakerValue(additionalArguments),
-            "int" => _fakerAdapter.GetFakeValue("random.number", additionalArguments),
-            "float" => _fakerAdapter.GetFakeValue("random.float", additionalArguments),
-            "bool" => _fakerAdapter.GetFakeValue("random.bool", additionalArguments),
+
+            "int" => _fakerAdapter.GetFakeValue("number", additionalArguments),
+            "float" => _fakerAdapter.GetFakeValue("float", additionalArguments),
+            "boolean" => _fakerAdapter.GetFakeValue("bool", additionalArguments),
+            "title" => _fakerAdapter.GetFakeValue("name.jobtitle", additionalArguments),
+            "firstName" => _fakerAdapter.GetFakeValue("name.firstname", additionalArguments),
+            "lastName" => _fakerAdapter.GetFakeValue("name.lastname", additionalArguments),
+            "company" => _fakerAdapter.GetFakeValue("company.companyname", additionalArguments),
+            "domain" => _fakerAdapter.GetFakeValue("internet.domainname", additionalArguments),
+            "tld" => _fakerAdapter.GetFakeValue("internet.domainsuffix", additionalArguments),
+            "email" => _fakerAdapter.GetFakeValue("internet.email", additionalArguments),
+            "street" => _fakerAdapter.GetFakeValue("address.streetname", additionalArguments),
+            "city" => _fakerAdapter.GetFakeValue("address.city", additionalArguments),
+            "country" => _fakerAdapter.GetFakeValue("address.country", additionalArguments),
+            "countryCode" => _fakerAdapter.GetFakeValue("address.countrycode", additionalArguments),
+            "zipcode" => _fakerAdapter.GetFakeValue("address.zipcode", additionalArguments),
+            "postcode" => _fakerAdapter.GetFakeValue("address.zipcode", additionalArguments),
+            "lat" => _fakerAdapter.GetFakeValue("address.latitude", additionalArguments),
+            "long" => _fakerAdapter.GetFakeValue("address.longitude", additionalArguments),
+            "phone" => _fakerAdapter.GetFakeValue("phone.phonenumber", additionalArguments),
+            "color" => _fakerAdapter.GetFakeValue("internet.color", additionalArguments),
+            "hexColor" => _fakerAdapter.GetFakeValue("internet.color", additionalArguments),
+            "guid" => _fakerAdapter.GetFakeValue("guid", additionalArguments),
+            "uuid" => _fakerAdapter.GetFakeValue("uuid", additionalArguments),
+            "ipv4" => _fakerAdapter.GetFakeValue("internet.ip", additionalArguments),
+            "ipv6" => _fakerAdapter.GetFakeValue("internet.ipv6", additionalArguments),
+            "lorem" => _fakerAdapter.GetFakeValue("lorem.text", additionalArguments),
+
+
             _ => null,
         };
     }

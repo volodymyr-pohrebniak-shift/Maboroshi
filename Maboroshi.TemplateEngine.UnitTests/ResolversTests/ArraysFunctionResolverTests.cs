@@ -27,7 +27,7 @@ public class ArraysFunctionResolverTests
     [Fact]
     public void OneOf_ShouldReturnRandomElement_FromArray()
     {
-        var array = new ArrayReturn<ReturnType>(new ReturnType[] { new StringReturn("x"), new StringReturn("y"), new StringReturn("z") });
+        var array = new ArrayReturn<ReturnType>([new StringReturn("x"), new StringReturn("y"), new StringReturn("z")]);
         var result = _resolver.TryResolve("oneof", array);
 
         result.Should().BeOfType<StringReturn>()
@@ -37,7 +37,7 @@ public class ArraysFunctionResolverTests
     [Fact]
     public void SomeOf_ShouldReturnRandomSubset()
     {
-        var array = new ArrayReturn<ReturnType>(new ReturnType[] { new StringReturn("a"), new StringReturn("b"), new StringReturn("c"), new StringReturn("d") });
+        var array = new ArrayReturn<ReturnType>([new StringReturn("a"), new StringReturn("b"), new StringReturn("c"), new StringReturn("d")]);
         var result = _resolver.TryResolve("someof", array, new StringReturn("1"), new StringReturn("3"));
 
         result.Should().BeOfType<ArrayReturn<ReturnType>>()
@@ -48,7 +48,7 @@ public class ArraysFunctionResolverTests
     [Fact]
     public void Join_ShouldConcatenateArray_WithSeparator()
     {
-        var array = new ArrayReturn<ReturnType>(new ReturnType[] { new StringReturn("a"), new StringReturn("b"), new StringReturn("c") });
+        var array = new ArrayReturn<ReturnType>([new StringReturn("a"), new StringReturn("b"), new StringReturn("c")]);
         var result = _resolver.TryResolve("join", array, new StringReturn(","));
 
         result.Should().BeOfType<StringReturn>()
@@ -58,7 +58,7 @@ public class ArraysFunctionResolverTests
     [Fact]
     public void Join_ShouldUseWhitespaceSeparator_WhenNoSeparatorIsProvided()
     {
-        var array = new ArrayReturn<ReturnType>(new ReturnType[] { new StringReturn("a"), new StringReturn("b"), new StringReturn("c") });
+        var array = new ArrayReturn<ReturnType>([new StringReturn("a"), new StringReturn("b"), new StringReturn("c")]);
         var result = _resolver.TryResolve("join", array);
 
         result.Should().BeOfType<StringReturn>()
@@ -68,40 +68,40 @@ public class ArraysFunctionResolverTests
     [Fact]
     public void Slice_ShouldReturnCorrectSubset_OfArray()
     {
-        var array = new ArrayReturn<ReturnType>(new ReturnType[] { new StringReturn("a"), new StringReturn("b"), new StringReturn("c"), new StringReturn("d") });
+        var array = new ArrayReturn<ReturnType>([new StringReturn("a"), new StringReturn("b"), new StringReturn("c"), new StringReturn("d")]);
         var result = _resolver.TryResolve("slice", array, new StringReturn("1"), new StringReturn("3"));
 
         result.Should().BeOfType<ArrayReturn<ReturnType>>()
-              .Which.Values.Should().BeEquivalentTo(new[] { new StringReturn("b"), new StringReturn("c") });
+              .Which.Values.Should().BeEquivalentTo([new StringReturn("b"), new StringReturn("c")]);
     }
 
     [Fact]
     public void Sort_ShouldSortArray_AscendingByDefault()
     {
-        var array = new ArrayReturn<ReturnType>(new ReturnType[] { new StringReturn("c"), new StringReturn("a"), new StringReturn("b") });
+        var array = new ArrayReturn<ReturnType>([new StringReturn("c"), new StringReturn("a"), new StringReturn("b")]);
         var result = _resolver.TryResolve("sort", array);
 
         result.Should().BeOfType<ArrayReturn<ReturnType>>()
-              .Which.Values.Should().BeEquivalentTo(new[] { new StringReturn("a"), new StringReturn("b"), new StringReturn("c") }, options => options.WithStrictOrdering());
+              .Which.Values.Should().BeEquivalentTo([new StringReturn("a"), new StringReturn("b"), new StringReturn("c")], options => options.WithStrictOrdering());
     }
 
     [Fact]
     public void Sort_ShouldSortArray_InDescendingOrder()
     {
-        var array = new ArrayReturn<ReturnType>(new ReturnType[] { new StringReturn("c"), new StringReturn("a"), new StringReturn("b") });
+        var array = new ArrayReturn<ReturnType>([new StringReturn("c"), new StringReturn("a"), new StringReturn("b")]);
         var result = _resolver.TryResolve("sort", array, new StringReturn("desc"));
 
         result.Should().BeOfType<ArrayReturn<ReturnType>>()
-              .Which.Values.Should().BeEquivalentTo(new[] { new StringReturn("c"), new StringReturn("b"), new StringReturn("a") }, options => options.WithStrictOrdering());
+              .Which.Values.Should().BeEquivalentTo([new StringReturn("c"), new StringReturn("b"), new StringReturn("a")], options => options.WithStrictOrdering());
     }
 
     [Fact]
     public void Reverse_ShouldReturnArray_InReversedOrder()
     {
-        var array = new ArrayReturn<ReturnType>(new ReturnType[] { new StringReturn("a"), new StringReturn("b"), new StringReturn("c") });
+        var array = new ArrayReturn<ReturnType>([new StringReturn("a"), new StringReturn("b"), new StringReturn("c")]);
         var result = _resolver.TryResolve("reverse", array);
 
         result.Should().BeOfType<ArrayReturn<ReturnType>>()
-              .Which.Values.Should().BeEquivalentTo(new[] { new StringReturn("c"), new StringReturn("b"), new StringReturn("a") }, options => options.WithStrictOrdering());
+              .Which.Values.Should().BeEquivalentTo([new StringReturn("c"), new StringReturn("b"), new StringReturn("a")], options => options.WithStrictOrdering());
     }
 }

@@ -17,6 +17,18 @@ public sealed record BoolReturn : ReturnType
     public static implicit operator BoolReturn(bool value) => new(value);
 
     public static implicit operator bool(BoolReturn result) => result.Value;
+    public override string ToString() => Value.ToString();
+}
+
+public sealed record NumberReturn : ReturnType
+{
+    public double Value { get; }
+    public NumberReturn(double value) => Value = value;
+    public override object GetValue() => Value;
+    public static implicit operator NumberReturn(double value) => new(value);
+
+    public static implicit operator double(NumberReturn result) => result.Value;
+    public override string ToString() => Value.ToString();
 }
 
 public sealed record StringReturn : ReturnType
@@ -28,6 +40,7 @@ public sealed record StringReturn : ReturnType
     public static implicit operator StringReturn(string value) => new(value);
 
     public static implicit operator string(StringReturn result) => result.Value;
+    public override string ToString() => Value;
 }
 
 public sealed record ArrayReturn<T> : ReturnType where T : ReturnType
@@ -67,8 +80,7 @@ public class Template
         var sb = new StringBuilder();
         foreach (var result in _nodes.Select(node => node.Accept(templateNodeVisitor)))
         {
-            if (result is StringReturn str)
-                sb.Append(str);
+            sb.Append(result.ToString());
         }
 
         return sb.ToString();
