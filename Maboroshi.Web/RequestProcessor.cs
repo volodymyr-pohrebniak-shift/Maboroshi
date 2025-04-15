@@ -6,7 +6,7 @@ namespace Maboroshi.Web;
 
 public class RequestProcessor(IMockedRouteStore routesStore, TemplateResolver templateResolver)
 {
-    public IResult Process(HttpContext context)
+    public async Task<IResult> Process(HttpContext context)
     {
         var route = routesStore.GetRouteByCriteria(context.Request.Path, MapMethodFromRequest(context.Request.Method));
 
@@ -34,6 +34,10 @@ public class RequestProcessor(IMockedRouteStore routesStore, TemplateResolver te
                     break;
                 }
             }
+        } else if (route.ResponseSelectionStrategy ==  ResponseSelectionStrategy.Random)
+        {
+            if (route.Responses.Any())
+                selectedResponse = route.Responses.ElementAt(Random.Shared.Next(route.Responses.Count()));
         }
 
         if (selectedResponse is null)
@@ -47,6 +51,11 @@ public class RequestProcessor(IMockedRouteStore routesStore, TemplateResolver te
         }
 
         var compiledResponse = templateResolver.GetTemplate(new RequestAdapter(context.Request, route), selectedResponse);
+
+        if (selectedResponse.Delay > 0)
+        {
+            await Task.Delay(selectedResponse.Delay);
+        }
 
         return new CustomResult(selectedResponse.StatusCode, selectedResponse.Headers.ToDictionary(x => x.Key, x => x.Value), compiledResponse);
     }

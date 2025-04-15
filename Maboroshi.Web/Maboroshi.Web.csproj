@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -6,9 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>f9841042-95d2-4c49-80b8-111f3d7b7864</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-	<SpaRoot>..\maroboshi.reactclient</SpaRoot>
+	<SpaRoot>..\Maboroshi.Reactclient</SpaRoot>
 	<SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
 	<SpaProxyServerUrl>https://localhost:56859</SpaProxyServerUrl>
+	<SpaStaticFilesOutputPath>dist</SpaStaticFilesOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,11 +25,23 @@
     </Content>
   </ItemGroup>
 
+	<ItemGroup Condition="'$(Configuration)' == 'Release'">
+		<SpaStaticFile Include="$(SpaRoot)dist\**" />
+	</ItemGroup>
+
+	<Target Name="CopyReactDistToWwwroot" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release'">
+		<ItemGroup>
+			<ReactDistFiles Include="$(SpaRoot)\$(SpaStaticFilesOutputPath)\**\*" />
+		</ItemGroup>
+		<Copy SourceFiles="@(ReactDistFiles)"
+			  DestinationFiles="@(ReactDistFiles->'$(PublishDir)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" />
+	</Target>
+
   <ItemGroup>
     <ProjectReference Include="..\Maboroshi.TemplateEngine\Maboroshi.TemplateEngine.csproj" />
-	  <ProjectReference Include="..\maroboshi.reactclient\maroboshi.reactclient.esproj">
-		  <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-	  </ProjectReference>
+	<ProjectReference Include="..\Maboroshi.ReactClient\maboroshi.reactclient.esproj">
+		<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+	</ProjectReference>
   </ItemGroup>
 
 </Project>

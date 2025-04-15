@@ -8,14 +8,16 @@
           "urlTemplate": "/api/test/",
           "httpMethod": "GET",
           "responseSelectionStrategy": "default",
-          "allowResponseCaching": true,
           "enabled": true,
           "responses": [
             {
               "name": "Response 1",
               "statusCode": 200,
               "body": "{\"response\": \"Hello world\"}",
-              "rules": []
+              "rules": [],
+              "disableTemplating": false,
+              "strictTemplateErrors": false,
+              "delay": 0
             }
           ]
         },
@@ -28,7 +30,9 @@
             {
               "name": "Response 1",
               "statusCode": 200,
-              "allowResponseCaching": true,
+              "disableTemplating": false,
+              "strictTemplateErrors": false,
+              "delay": 0,
               "body": "{\"response\": \"Authorized\"}",
               "rules": [
                 {
@@ -51,7 +55,10 @@
               "name": "Response 2",
               "statusCode": 401,
               "body": "{\"response\": \"Not Authorized\"}",
-              "allowResponseCaching": true,
+              "disableTemplating": false,
+              "strictTemplateErrors": false,
+              "delay": 0,
+              "enabled": true,
               "rules": [
                 {
                   "type": "Header",
@@ -75,7 +82,9 @@
               "statusCode": 200,
               "body": "{\n    \"userId\": \"text\",\n    \"otherText\": 1,\n   \"upper\": \"{{ uppercase 'test' }}\",\n   \"id\": {{urlParam 'id'}}\n}",
               "rules": [],
-              "allowResponseCaching": true
+              "disableTemplating": false,
+              "strictTemplateErrors": false,
+              "delay": 0
             }
           ]
         }

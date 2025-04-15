@@ -138,7 +138,17 @@ internal class Parser(List<Token> tokens)
         {
             if (Match(TokenType.TEXT))
             {
-                nodes.Add(new TextNode(Previous.Value));
+                // removes leading newline after start of the block
+                if (nodes.Count == 0)
+                {
+                    var text = Previous.Value.Remove(Previous.Value.IndexOf('\n'), 1);
+                    if (!string.IsNullOrEmpty(text))
+                        nodes.Add(new TextNode(text));
+                }
+                else
+                {
+                    nodes.Add(new TextNode(Previous.Value));
+                }
             }
             if (Match(TokenType.EXPRESSION_START))
             {
@@ -154,6 +164,7 @@ internal class Parser(List<Token> tokens)
             }
         }
         Consume(TokenType.EXPRESSION_END);
+
         return nodes.Count == 0 ? null : new BlockNode(blockName, parameters, nodes);
     }
 

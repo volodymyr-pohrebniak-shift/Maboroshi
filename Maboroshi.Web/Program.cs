@@ -1,4 +1,5 @@
 using Maboroshi.Web.RouteMatching;
+using Maboroshi.Web.Services;
 using Maboroshi.Web.Templates;
 
 namespace Maboroshi.Web;
@@ -12,13 +13,14 @@ public static class Program
         builder.Services.AddSingleton<UrlMatchinStrategyFactory>();
         builder.Services.AddSingleton<IUrlMatchingHandler, UrlMatchingHandler>();
         builder.Services.AddSingleton<IMockedRouteStore, InMemoryMockedRouteStore>();
+        builder.Services.AddSingleton<ICacheResetTokenProvider, CacheResetTokenProvider>();
 
-        builder.Services.AddSingleton<EnvironmentsProvider>((IServiceProvider serviceProvider) =>
+        builder.Services.AddSingleton((IServiceProvider serviceProvider) =>
         {
             var root = new FileConfigurationParser(Path.Combine(builder.Environment.ContentRootPath, "mocks/example.json")).Parse();
             var mockService = serviceProvider.GetRequiredService<IMockedRouteStore>();
             var provider = new EnvironmentsProvider(mockService);
-            provider.SetEnvironments(root!.Environments.ToArray());
+            provider.SetEnvironments([.. root!.Environments]);
             return provider;
         });
 
@@ -31,16 +33,22 @@ public static class Program
         app.UseDefaultFiles();
         app.UseStaticFiles();
 
+        app.UseRouting();
+
+        app.MapFallbackToFile("index.html");
+
+        // load config from file
+        app.Services.GetRequiredService<EnvironmentsProvider>();
+
         app.MapGet("/$$$SYSTEM$$$/environments", (EnvironmentsProvider environmentsProvider) => environmentsProvider.GetEnvironments());
 
-        app.MapPut("/$$$SYSTEM$$$/environments", (Models.Environment[] environtments, EnvironmentsProvider environmentsProvider) => {
+        app.MapPut("/$$$SYSTEM$$$/environments", (Models.Environment[] environtments, EnvironmentsProvider environmentsProvider, ICacheResetTokenProvider tokenProvider) => {
             environmentsProvider.SetEnvironments(environtments);
+            tokenProvider.CancelAndRefresh();
             Results.Ok();
         });
 
-        app.Map("{**catchAll}", (HttpContext context, RequestProcessor requestProcessor) => requestProcessor.Process(context));
-
-        //app.MapFallbackToFile("/index.html");
+        app.Map("{**catchAll}", async (HttpContext context, RequestProcessor requestProcessor) => await requestProcessor.Process(context));
 
         app.Run();
     }

@@ -181,6 +181,10 @@ internal class Lexer(string source)
             {
                 if (_current == start + 1)
                     throw new InvalidOperationException("Block name can't be empty");
+
+                if (new string(_source.AsSpan()[(start + 1).._current]) != "end")
+                    throw new InvalidOperationException("Block should be closed by 'end' keyword");
+
                 return new Token(TokenType.BLOCK_END, _source[(start + 1).._current]);
             }
         }

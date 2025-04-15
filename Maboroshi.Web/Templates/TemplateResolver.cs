@@ -1,38 +1,62 @@
 ﻿using Maboroshi.Web.Models;
 using Maboroshi.TemplateEngine;
 using Microsoft.Extensions.Caching.Memory;
+using Maboroshi.Web.Services;
 
 namespace Maboroshi.Web.Templates;
 
-public class TemplateResolver(IMemoryCache _cache)
+public class TemplateResolver(IMemoryCache _responseCache, IMemoryCache _templateCache, ICacheResetTokenProvider _tokenProvider)
 {
     public string? GetTemplate(RequestAdapter requestAdapter, MockedRouteResponse response)
     {
-        if (_cache.TryGetValue(requestAdapter.GetPath(), out var template))
+        if (_responseCache.TryGetValue(requestAdapter.GetPath(), out string? responseStr))
         {
-            return (string)template!;
+            return responseStr;
         }
         string? compiledResponse;
-        bool shouldCache = true;
-        if (!string.IsNullOrEmpty(response.Body))
+        var shouldCache = true;
+        if (!string.IsNullOrEmpty(response.Body) && !response.DisableTemplating)
         {
-            var newTemplate = TemplateGenerator.CreateTemplate(response.Body);
+
+            if (!_templateCache.TryGetValue(requestAdapter.GetPath(), out Template? template))
+            {
+                template = TemplateGenerator.CreateTemplate(response.Body, new(response.StrictTemplateErrors));
+            }
 
             // if we use some params from the request we do not cache template
             void callback() => shouldCache = false;
 
-            compiledResponse = newTemplate.Compile(new RequestParamsFunctionResolver(requestAdapter, callback));
+            compiledResponse = template!.Compile(new RequestParamsFunctionResolver(requestAdapter, callback));
+
+            // we still cache template object, so next time we don't need to parse it again
+            if (!shouldCache)
+            {
+                _templateCache.Set(requestAdapter.GetPath(), template, 
+                    new MemoryCacheEntryOptions
+                    {
+                        ExpirationTokens = { _tokenProvider.GetChangeToken() }
+                    });
+            }
         }
         else
         {
             compiledResponse = response.Body;
         }
-        if (shouldCache && response.AllowResponseCaching)
+        if (shouldCache)
         {
-
-            _cache.Set(requestAdapter.GetPath(), compiledResponse);
+            _responseCache.Set(requestAdapter.GetPath(), compiledResponse, 
+                new MemoryCacheEntryOptions
+                {
+                    ExpirationTokens = { _tokenProvider.GetChangeToken() }
+                });
         }
 
         return compiledResponse;
+    }
+
+    public void ClearCaches()
+    {
+        (_templateCache as MemoryCache)!.Clear();
+        (_responseCache as MemoryCache)!.Clear();
     }
 }

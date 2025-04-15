@@ -1,4 +1,5 @@
 ﻿using Maboroshi.TemplateEngine.FunctionResolvers;
+using Maboroshi.TemplateEngine.TemplateNodes;
 
 namespace Maboroshi.TemplateEngine;
 
@@ -10,14 +11,23 @@ public static class TemplateGenerator
         new FakerFunctionResolver(new StaticFakerAdapter())
     ];
 
-    public static Template CreateTemplate(string templateStr)
+    public static Template CreateTemplate(string templateStr, TemplateCompilationOptions? options = null)
     {
-        // TODO check if templateStr doesn't contain expression
-        // TODO handle exceptions
-        var lexer = new Lexer(templateStr);
-        var nodes = new Parser(lexer.Tokenize().ToList()).Parse();
+        options ??= new TemplateCompilationOptions(false);
+        try
+        {
+            var lexer = new Lexer(templateStr);
+            var nodes = new Parser([.. lexer.Tokenize()]).Parse();
 
-        return new Template(nodes, StaticResolvers);
+            return nodes.Count == 0 || (nodes.Count == 1 && nodes.First() is TextNode) ?
+                new StaticTemplate(templateStr) :
+                new Template(nodes, StaticResolvers);
+        } catch (TemplateParsingException)
+        {
+            if (!options.Strict)
+                return new StaticTemplate(templateStr);
+            else throw;
+        }
     }
 }
 

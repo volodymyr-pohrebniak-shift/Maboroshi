@@ -77,11 +77,11 @@ public class LexerTests
     [Fact]
     public void Tokenize_ShouldParseBlockEnd()
     {
-        var tokens = Tokenize("{{ /repeat }}");
+        var tokens = Tokenize("{{ /end }}");
 
         tokens.Should().HaveCount(4);
         tokens[1].TokenType.Should().Be(TokenType.BLOCK_END);
-        tokens[1].Value.Should().Be("repeat");
+        tokens[1].Value.Should().Be("end");
     }
 
     [Fact]
@@ -122,6 +122,14 @@ public class LexerTests
     public void Tokenize_ShouldFail_WhenExpressionIsNotClosed()
     {
         var act = () => Tokenize("{{ 'hello'");
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Tokenize_ShouldFail_WhenBlockIsClosedWithWrongKeyword()
+    {
+        var act = () => Tokenize("{{ /notend }}");
 
         act.Should().Throw<InvalidOperationException>();
     }
