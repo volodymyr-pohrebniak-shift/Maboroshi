@@ -8,6 +8,7 @@ public static class TemplateGenerator
     private static readonly IFunctionResolver[] StaticResolvers = [
         new StringsFunctionResolver(),
         new ArraysFunctionResolver(),
+        new MathFunctionResolver(),
         new FakerFunctionResolver(new StaticFakerAdapter())
     ];
 

@@ -138,17 +138,7 @@ internal class Parser(List<Token> tokens)
         {
             if (Match(TokenType.TEXT))
             {
-                // removes leading newline after start of the block
-                if (nodes.Count == 0)
-                {
-                    var text = Previous.Value.Remove(Previous.Value.IndexOf('\n'), 1);
-                    if (!string.IsNullOrEmpty(text))
-                        nodes.Add(new TextNode(text));
-                }
-                else
-                {
-                    nodes.Add(new TextNode(Previous.Value));
-                }
+                nodes.Add(new TextNode(Previous.Value));
             }
             if (Match(TokenType.EXPRESSION_START))
             {

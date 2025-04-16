@@ -16,6 +16,7 @@ internal class MathFunctionResolver : IFunctionResolver
             "round" => Round(additionalArguments),
             "toFixed" => ToFixed(additionalArguments),
             "eq" => Eq(additionalArguments),
+            "noteq" => new BoolReturn(!Eq(additionalArguments)),
             "gt" => Cmp(additionalArguments, (a, b) => a > b),
             "gte" => Cmp(additionalArguments, (a, b) => a >= b),
             "lt" => Cmp(additionalArguments, (a, b) => a < b),
@@ -96,7 +97,7 @@ internal class MathFunctionResolver : IFunctionResolver
         if (args.Length < 2) return true;
         var first = args[0];
         var other = args[1];
-        if (first.GetType() != other.GetType()) return false;
+
         if (!first.Equals(other)) return false;
         return true;
     }

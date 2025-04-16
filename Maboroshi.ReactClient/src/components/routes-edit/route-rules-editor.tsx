@@ -210,7 +210,7 @@ export function RulesEditor() {
       selectedResponse.rules,
       path,
       (rule) => {
-        if (rule.type !== "Aggregate") return rule;
+        if (rule.type === "Aggregate") return rule;
         return {
           ...rule,
           [field]: value,
@@ -222,7 +222,7 @@ export function RulesEditor() {
   };
 
   // Update a group's condition at a specific path
-  const updateGroupCondition = (path: string[], condition: "AND" | "OR") => {
+  const updateGroupCondition = (path: string[], op: "AND" | "OR") => {
     if (path.length === 0) return;
 
     const updatedRules = updateRuleAtPath(
@@ -232,7 +232,7 @@ export function RulesEditor() {
         if (rule.type !== "Aggregate") return rule;
         return {
           ...rule,
-          condition,
+          op,
         };
       }
     );
@@ -269,13 +269,12 @@ export function RulesEditor() {
 
     updateResponseRules(updatedRules);
   };
-  console.log(selectedResponse.rules);
   const renderSimpleRule = (rule: SimpleRule, path: string[]) => (
     <div key={rule.id} className="flex items-center space-x-2 ml-6 my-2">
       <Select
         value={rule.type}
         onValueChange={(value: string) =>
-          updateSimpleRule([...path, rule.id], "key", value)
+          updateSimpleRule([...path, rule.id], "type", value)
         }
       >
         <SelectTrigger className="min-w-[120px] w-[120px] max-w-[120px]">

@@ -43,9 +43,14 @@ public class TemplateEngineTests
     {
         const string str = """
                            {
-                             {{ #repeat 5 }}
-                                INdex: {{ @index }}
-                             {{ /end }}
+                             "users": [
+                               {{ #repeat 2 ',' }}
+                                  {
+                                     "id": {{ @index }},
+                                     "firstName": "{{ firstName }}"
+                                  }
+                               {{ /end }}
+                             ]
                            }
                            """;
         var template = TemplateGenerator.CreateTemplate(str);

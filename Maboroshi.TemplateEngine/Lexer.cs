@@ -19,7 +19,10 @@ internal class Lexer(string source)
                 expressionStarted = true;
                 if (start != _current - 1)
                 {
-                    _tokens.Add(new Token(TokenType.TEXT, _source[start..(_current - 1)]));
+                    var end = _current - 2;
+                    var b = _source[end];
+                    while (end != 0 && _source[end] == ' ') end--;
+                    _tokens.Add(new Token(TokenType.TEXT, _source[start..(end+1)]));
                 }
                 _tokens.Add(new Token(TokenType.EXPRESSION_START, "{{"));
                 start = _current;
@@ -28,7 +31,10 @@ internal class Lexer(string source)
             {
                 expressionStarted = false;
                 _tokens.Add(new Token(TokenType.EXPRESSION_END, "}}"));
-                start = _current + 1;
+                Advance();
+                TryConsume('\r');
+                TryConsume('\n');
+                start = _current;
             }
             else if (expressionStarted)
             {
@@ -116,7 +122,7 @@ internal class Lexer(string source)
         while (_current < _source.Length)
         {
             Advance();
-            if (char.IsWhiteSpace(Peek()))
+            if (char.IsWhiteSpace(Peek()) || Peek() == '}' || Peek() == ')')
             {
                 return new Token(TokenType.NUMBER, _source[start.._current]);
             }
@@ -200,6 +206,16 @@ internal class Lexer(string source)
         }
 
         return _source[_current++];
+    }
+
+    private void TryConsume(char c)
+    {
+        if (_current >= _source.Length)
+        {
+            return;
+        }
+        
+        if (c == _source[_current]) _current++;
     }
 
     private char Peek()

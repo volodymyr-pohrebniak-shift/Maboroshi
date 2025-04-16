@@ -11,7 +11,7 @@ internal class StringsFunctionResolver : IFunctionResolver
             "includes" => Includes(additionalArguments),
             "substr" => Substr(additionalArguments),
             "split" => Split(additionalArguments),
-            "padStart" => PadStart(additionalArguments),
+            "padstart" => PadStart(additionalArguments),
             _ => null
         };
     }

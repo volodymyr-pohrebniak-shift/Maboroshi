@@ -162,10 +162,40 @@ internal class StaticFakerAdapter : IFakerAdapter
             "phone.phonenumberformat" => _faker.Phone.PhoneNumberFormat(),
 
             // Random
-            "number" => _faker.Random.Number(),
+            "number" => () =>
+            {
+                if (args.Length >= 1)
+                {
+                    var min = args[0] is NumberReturn n ? (int)n.Value : 0;
+                    var max = args.Length > 1 && args[1] is NumberReturn maxV ? (int)maxV.Value : int.MaxValue;
+                    return _faker.Random.Number(min, max);
+                }
+                return _faker.Random.Number();
+            },
             "digits" => int.Parse(_faker.Random.Digits(1)[0].ToString()),
-            "even" => _faker.Random.Even(),
-            "odd" => _faker.Random.Odd(),
+            "even" => () =>
+            {
+                if (args.Length >= 1)
+                {
+                    var min = args[0] is NumberReturn n ? (int)n.Value : 0;
+                    var max = args.Length > 1 && args[1] is NumberReturn maxV ? (int)maxV.Value : int.MaxValue;
+                    return _faker.Random.Even(min, max);
+                }
+
+                return _faker.Random.Even();
+            }
+            ,
+            "odd" => () =>
+            {
+                if (args.Length >= 1)
+                {
+                    var min = args[0] is NumberReturn n ? (int)n.Value : 0;
+                    var max = args.Length > 1 && args[1] is NumberReturn maxV ? (int)maxV.Value : int.MaxValue;
+                    return _faker.Random.Even(min, max);
+                }
+
+                return _faker.Random.Odd();
+            },
             "double" => _faker.Random.Double(),
             "decimal" => (double)_faker.Random.Decimal(),
             "float" => _faker.Random.Float(),
@@ -186,7 +216,16 @@ internal class StaticFakerAdapter : IFakerAdapter
 
             // Misc
             "word" => _faker.Random.Word(),
-            "words" => _faker.Random.Words(),
+            "words" => () =>
+            {
+                if (args.Length >= 1)
+                {
+                    var count = args[0] is NumberReturn n ? (int?)n.Value : null;
+                    return _faker.Random.Words(count);
+                }
+
+                return _faker.Random.Words();
+            },
             "wordsarray" => string.Join(" ", _faker.Random.WordsArray(3)),
             "guid" => _faker.Random.Guid().ToString(),
             "uuid" => _faker.Random.Uuid().ToString(),

@@ -1,6 +1,5 @@
 ﻿using Maboroshi.TemplateEngine.FunctionResolvers;
 using Maboroshi.TemplateEngine.TemplateNodes;
-using System.Collections.Generic;
 using System.Text;
 
 namespace Maboroshi.TemplateEngine;
@@ -18,7 +17,7 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
 
         foreach (var resolver in _functionResolvers)
         {
-            result = resolver.TryResolve(node.Name, parameters);
+            result = resolver.TryResolve(node.Name.ToLowerInvariant(), parameters);
             if (result is not null)
                 break;
         }

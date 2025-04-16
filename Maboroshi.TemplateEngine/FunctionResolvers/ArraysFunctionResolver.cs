@@ -48,9 +48,7 @@ internal class ArraysFunctionResolver : IFunctionResolver
         var selected = array.Values.OrderBy(_ => Guid.NewGuid()).Take(count).ToArray();
 
         return stringify
-            ? new ArrayReturn<ReturnType>(selected
-                .Select(item => new StringReturn(item.GetValue().ToString()!))
-                .ToArray<ReturnType>())
+            ? new ArrayReturn<ReturnType>([.. selected.Select(item => new StringReturn(item.GetValue().ToString()!))])
             : new ArrayReturn<ReturnType>(selected);
     }
 
@@ -87,7 +85,7 @@ internal class ArraysFunctionResolver : IFunctionResolver
         string order = arguments.Length > 1 && arguments[1] is StringReturn str ? str.Value.ToLower() : "asc";
         var sortedValues = array.Values.OrderBy(v => v.GetValue().ToString()).ToArray();
 
-        return order == "desc" ? new ArrayReturn<ReturnType>(sortedValues.Reverse().ToArray()) : new ArrayReturn<ReturnType>(sortedValues);
+        return order == "desc" ? new ArrayReturn<ReturnType>([.. sortedValues.Reverse()]) : new ArrayReturn<ReturnType>(sortedValues);
     }
 
     private static ArrayReturn<ReturnType> Reverse(ReturnType[] arguments)
@@ -97,7 +95,7 @@ internal class ArraysFunctionResolver : IFunctionResolver
             throw new Exception("reverse function requires an array parameter.");
         }
 
-        return new ArrayReturn<ReturnType>(array.Values.Reverse().ToArray());
+        return new ArrayReturn<ReturnType>([.. array.Values.Reverse()]);
     }
 
 }
