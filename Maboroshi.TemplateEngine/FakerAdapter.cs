@@ -162,16 +162,7 @@ internal class StaticFakerAdapter : IFakerAdapter
             "phone.phonenumberformat" => _faker.Phone.PhoneNumberFormat(),
 
             // Random
-            "number" => () =>
-            {
-                if (args.Length >= 1)
-                {
-                    var min = args[0] is NumberReturn n ? (int)n.Value : 0;
-                    var max = args.Length > 1 && args[1] is NumberReturn maxV ? (int)maxV.Value : int.MaxValue;
-                    return _faker.Random.Number(min, max);
-                }
-                return _faker.Random.Number();
-            },
+            "number" => GetRandomNumber(args),
             "digits" => int.Parse(_faker.Random.Digits(1)[0].ToString()),
             "even" => () =>
             {
@@ -197,7 +188,7 @@ internal class StaticFakerAdapter : IFakerAdapter
                 return _faker.Random.Odd();
             },
             "double" => _faker.Random.Double(),
-            "decimal" => (double)_faker.Random.Decimal(),
+            "decimal" => _faker.Random.Decimal(),
             "float" => _faker.Random.Float(),
             "byte" => _faker.Random.Byte(),
             "sbyte" => _faker.Random.SByte(),
@@ -251,6 +242,21 @@ internal class StaticFakerAdapter : IFakerAdapter
     private static DateTime? TryParseDate(string? input)
     {
         return DateTime.TryParse(input, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt) ? dt : null;
+    }
+
+    private static int GetRandomNumber(ReturnType[] args)
+    {
+        if (args.Length >= 1)
+        {
+            var min = args[0] is NumberReturn n ? (int)n.Value :
+                args[0] is StringReturn minStr && int.TryParse(minStr, out var parsedMin) ? parsedMin 
+                : 0;
+            var max = args.Length > 1 && args[1] is NumberReturn maxV ? (int)maxV.Value :
+                args[1] is StringReturn maxStr && int.TryParse(maxStr, out var parsedMax) ? parsedMax
+                : int.MaxValue;
+            return _faker.Random.Number(min, max);
+        }
+        return _faker.Random.Number();
     }
 }
 

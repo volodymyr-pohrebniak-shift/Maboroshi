@@ -98,7 +98,7 @@ internal class MathFunctionResolver : IFunctionResolver
         var first = args[0];
         var other = args[1];
 
-        if (!first.Equals(other)) return false;
+        if (!first.GetValue().Equals(other.GetValue())) return false;
         return true;
     }
 

@@ -122,7 +122,7 @@ internal class Lexer(string source)
         while (_current < _source.Length)
         {
             Advance();
-            if (char.IsWhiteSpace(Peek()) || Peek() == '}' || Peek() == ')')
+            if (char.IsWhiteSpace(Peek())| Peek() == '}' || Peek() == ')')
             {
                 return new Token(TokenType.NUMBER, _source[start.._current]);
             }

@@ -10,7 +10,8 @@ internal class FakerFunctionResolver(IFakerAdapter fakerAdapter) : IFunctionReso
         {
             "faker" => GetFakerValue(additionalArguments),
 
-            "int" => _fakerAdapter.GetFakeValue("number", additionalArguments),
+            "number" => _fakerAdapter.GetFakeValue("number", additionalArguments),
+            "int" => _fakerAdapter.GetFakeValue("int", additionalArguments),
             "float" => _fakerAdapter.GetFakeValue("float", additionalArguments),
             "boolean" => _fakerAdapter.GetFakeValue("bool", additionalArguments),
             "title" => _fakerAdapter.GetFakeValue("name.jobtitle", additionalArguments),

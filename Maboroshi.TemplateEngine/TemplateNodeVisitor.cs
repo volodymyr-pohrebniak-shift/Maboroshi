@@ -184,23 +184,45 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
             throw new Exception("repeat block should have at least one parameter");
         var evaluatedParameters = node.Parameters.ConvertAll(x => x.Accept(this));
         var repeatCount = -1;
-        if (evaluatedParameters[0] is StringReturn minCountStr && int.TryParse(minCountStr.Value, out var minCount))
+        string? separator = null;
+        if (TryGetIntParameter(evaluatedParameters[0], out var minCount))
         {
-            if (evaluatedParameters.Count > 1)
-            {
-                if (evaluatedParameters[0] is StringReturn maxCountStr && int.TryParse(maxCountStr.Value, out var maxCount))
+            if (evaluatedParameters.Count >= 3) {
+                if (evaluatedParameters[1] is StringReturn maxCountStr && int.TryParse(maxCountStr.Value, out var maxCount))
                 {
                     repeatCount = new Random().Next(minCount, maxCount + 1);
                 }
                 else
                 {
-                    throw new Exception("repeat block parameters should be int");
+                    throw new Exception("repeat block max parameter should be number");
                 }
-            }
-            else
+
+                if (evaluatedParameters[2] is StringReturn separatorReturn)
+                {
+                    separator = separatorReturn.Value;
+                }
+            } else if (evaluatedParameters.Count == 2)
+            {
+                if (evaluatedParameters[1] is StringReturn strReturn)
+                {
+                    if (int.TryParse(strReturn.Value, out var maxCount))
+                    {
+                        repeatCount = new Random().Next(minCount, maxCount + 1);
+                    } else
+                    {
+                        separator = strReturn.Value;
+                        repeatCount = minCount;
+                    }
+                }
+                else
+                {
+                    throw new Exception("repeat block parameters should be number or string");
+                }
+            } else
             {
                 repeatCount = minCount;
             }
+
             var sb = new StringBuilder();
             _context.InitializeScope();
             for (var i = 0; i < repeatCount; i++)
@@ -210,7 +232,17 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
                 {
                     _context.InitializeScope();
                     sb.Append(body.Accept(this).GetValue());
-                    _context.ReleaseScope();
+                }
+
+                if (i != repeatCount - 1 && !string.IsNullOrEmpty(separator))
+                {
+                    if (TrimEndAndTrackNewlines(sb))
+                    {
+                        sb.AppendLine(separator);
+                    } else
+                    {
+                        sb.Append(separator);
+                    }
                 }
             }
             _context.ReleaseScope();
@@ -246,5 +278,75 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
         }
         _context.ReleaseScope();
         return new StringReturn(sb.ToString());
+    }
+
+    public static bool TrimEndAndTrackNewlines(StringBuilder sb)
+    {
+        if (sb == null || sb.Length == 0)
+            return false;
+
+        int i = sb.Length - 1;
+        bool foundNewlineOrCR = false;
+
+        while (i >= 0)
+        {
+            char c = sb[i];
+            if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
+            {
+                if (c == '\n' || c == '\r')
+                    foundNewlineOrCR = true;
+
+                i--;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        sb.Length = i + 1;
+        return foundNewlineOrCR;
+    }
+
+    private static (string trimmed, bool hadNewlineOrCarriageReturn) TrimEndAndTrackNewlines(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return (input, false);
+
+        int end = input.Length - 1;
+        bool foundNewlineOrCR = false;
+
+        while (end >= 0)
+        {
+            char c = input[end];
+            if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
+            {
+                if (c == '\n' || c == '\r')
+                {
+                    foundNewlineOrCR = true;
+                }
+                end--;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return (input.Substring(0, end + 1), foundNewlineOrCR);
+    }
+
+    private static bool TryGetIntParameter(ReturnType param, out int output)
+    {
+        if (param is NumberReturn n)
+        {
+            output = (int)n.Value;
+            return true;
+        } else if (param is StringReturn str && int.TryParse(str.Value, out output))
+        {
+            return true;
+        }
+        output = Int32.MinValue;
+        return false;
     }
 }

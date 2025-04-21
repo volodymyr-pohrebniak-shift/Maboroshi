@@ -195,3 +195,27 @@ These helpers allow you to extract values directly from the incoming HTTP reques
 | `method`       | Get HTTP method (e.g., GET, POST)                   |
 
 Examples:
+```
+{{ var 'count' 5 }}
+{
+  "Template example":  "This is an example of the template",
+  "total": {{ @count }},
+  "users": [
+   {{ #repeat @count ',' }}
+     {
+        "userId": {{ uuid }},
+        "firstName": {{ firstname }},
+        "lastName": {{ lastName }},
+        "phoneNumber": {{ faker 'phone.phonenumber' }},
+        "friends": [
+            {{ #repeat (number 3 6 ) ',' }}
+               {
+                 "id": {{ uuid }}
+               }
+            {{ /end }}
+         ]
+     }
+   {{ /end }}
+  ]
+}
+```
