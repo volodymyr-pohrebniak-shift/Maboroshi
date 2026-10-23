@@ -17,7 +17,7 @@ public sealed record BoolReturn : ReturnType
     public static implicit operator BoolReturn(bool value) => new(value);
 
     public static implicit operator bool(BoolReturn result) => result.Value;
-    public override string ToString() => Value.ToString();
+    public override string ToString() => Value.ToString().ToLowerInvariant();
 }
 
 public sealed record NumberReturn : ReturnType
@@ -48,6 +48,7 @@ public sealed record ArrayReturn<T> : ReturnType where T : ReturnType
     public T[] Values { get; }
     public ArrayReturn(T[] values) => Values = values;
     public override object GetValue() => Values;
+    public override string ToString() => string.Join(",", Values.Select(v => v.ToString()));
 }
 
 public class Template

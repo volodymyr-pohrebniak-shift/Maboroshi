@@ -55,7 +55,7 @@ internal class Parser(List<Token> tokens)
             return ParseExpression();
         }
 
-        return null;
+        throw new TemplateParsingException($"Unexpected token: {Current.TokenType}");
     }
     private TemplateNode? ParseExpression(TokenType endTokenType = TokenType.EXPRESSION_END)
     {
@@ -140,7 +140,7 @@ internal class Parser(List<Token> tokens)
             {
                 nodes.Add(new TextNode(Previous.Value));
             }
-            if (Match(TokenType.EXPRESSION_START))
+            else if (Match(TokenType.EXPRESSION_START))
             {
                 if (Match(TokenType.BLOCK_END))
                 {
@@ -151,6 +151,10 @@ internal class Parser(List<Token> tokens)
                     if (node != null)
                         nodes.Add(node);
                 }
+            }
+            else
+            {
+                throw new TemplateParsingException($"Unexpected token: {Current.TokenType}");
             }
         }
         Consume(TokenType.EXPRESSION_END);

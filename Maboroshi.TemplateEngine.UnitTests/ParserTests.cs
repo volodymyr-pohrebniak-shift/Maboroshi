@@ -94,7 +94,7 @@ public class ParserTests
     [Fact]
     public void Parse_ShouldParseValidBlockWithText()
     {
-        var parser = CreateParser("{{ #repeat 3 }} Hello {{ /repeat }}");
+        var parser = CreateParser("{{ #repeat 3 }} Hello {{ /end }}");
         var result = parser.Parse();
 
         result.Should().HaveCount(1);
@@ -113,7 +113,7 @@ public class ParserTests
     [Fact]
     public void Parse_ShouldParseValidBlockWithInnerExpression()
     {
-        var parser = CreateParser("{{ #repeat 3 }}{{ concat 'hello' 'world' }}{{ /repeat }}");
+        var parser = CreateParser("{{ #repeat 3 }}{{ concat 'hello' 'world' }}{{ /end }}");
         var result = parser.Parse();
 
         result.Should().HaveCount(1);
@@ -150,6 +150,16 @@ public class ParserTests
     public void Parse_ShouldFail_WhenBlockAppearsInSubExpression()
     {
         var parser = CreateParser("{{ ( #repeat 3 'text' ) }}");
+
+        var act = () => parser.Parse();
+
+        act.Should().Throw<TemplateParsingException>();
+    }
+
+    [Fact]
+    public void Parse_ShouldFail_OnUnexpectedToken_InsteadOfLooping()
+    {
+        var parser = new Parser([new Token(TokenType.EXPRESSION_END, "}}"), new Token(TokenType.EOF, string.Empty)]);
 
         var act = () => parser.Parse();
 

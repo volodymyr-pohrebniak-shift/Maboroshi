@@ -12,7 +12,7 @@ public class RequestParamsFunctionResolver(RequestAdapter adapter, Action? callb
             "queryparam" => ResolveWithParams(adapter.GetQueryParam, additionalArguments),
             "urlparam" => ResolveWithParams(adapter.GetUrlParam, additionalArguments),
             "cookieparam" => ResolveWithParams(adapter.GetCookieParam, additionalArguments),
-            "headerParam" => ResolveWithParams(adapter.GetHeaderParam, additionalArguments),
+            "headerparam" =>ResolveWithParams(adapter.GetHeaderParam, additionalArguments),
             "hostname" => Resolve(adapter.GetHostname),
             "ip" => Resolve(adapter.GetIp),
             "method" => Resolve(adapter.GetMethod),

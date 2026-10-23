@@ -106,9 +106,9 @@ Expressions support:
 ### 🔁 Array Helpers
 | Helper     | Description                            |
 |------------|----------------------------------------|
-| `array`    | Create array: `{{array (1 2 3)}}`        |
-| `oneOf`    | Pick one: `{{oneOf (array (1 2 3))}}`    |
-| `someOf`   | Pick multiple: `{{someOf (array (1 2 3)) 1 2)}}` |
+| `array`    | Create array: `{{array 1 2 3}}`        |
+| `oneOf`    | Pick one: `{{oneOf (array 1 2 3)}}`    |
+| `someOf`   | Pick multiple: `{{someOf (array 1 2 3) 1 2)}}` |
 | `join`     | Join values: `{{join (array 1 2 3) ','}}` |
 | `slice`    | Sub-array: `{{slice (array 1 2 3) }}` |
 | `sort`    | Sort array: `{{sort (array 1 2 3) 'asc' }}` |

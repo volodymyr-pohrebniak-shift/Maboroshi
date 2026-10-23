@@ -48,7 +48,7 @@ internal class ArraysFunctionResolver : IFunctionResolver
         var selected = array.Values.OrderBy(_ => Guid.NewGuid()).Take(count).ToArray();
 
         return stringify
-            ? new ArrayReturn<ReturnType>([.. selected.Select(item => new StringReturn(item.GetValue().ToString()!))])
+            ? new ArrayReturn<ReturnType>([.. selected.Select(item => new StringReturn(item.ToString()))])
             : new ArrayReturn<ReturnType>(selected);
     }
 
@@ -60,7 +60,7 @@ internal class ArraysFunctionResolver : IFunctionResolver
         }
 
         var separator = arguments.Length > 1 && arguments[1] is StringReturn sep ? sep.Value : " ";
-        return new StringReturn(string.Join(separator, array.Values.Select(v => v.GetValue().ToString())));
+        return new StringReturn(string.Join(separator, array.Values.Select(v => v.ToString())));
     }
 
     private static ArrayReturn<ReturnType> Slice(ReturnType[] arguments)

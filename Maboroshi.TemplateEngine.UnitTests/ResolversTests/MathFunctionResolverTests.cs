@@ -13,6 +13,7 @@ public class MathFunctionResolverTests
         ["multiply", 6.0, new double[] { 1, 2, 3 }],
         ["divide", 0.16666666666666666, new double[] { 1, 2, 3 }],
         ["modulo", 1.0, new double[] { 10, 3 }],
+        ["mod", 1.0, new double[] { 10, 3 }],
         ["ceil", 2.0, new double[] { 1.1 }],
         ["floor", 1.0, new double[] { 1.9 }],
         ["round", 2.0, new double[] { 1.6 }]
@@ -61,7 +62,7 @@ public class MathFunctionResolverTests
     [Fact]
     public void TestToFixed()
     {
-        var result = _resolver.TryResolve("toFixed",
+        var result = _resolver.TryResolve("tofixed",
             new NumberReturn(5.6789), new NumberReturn(2));
 
         result.Should().BeOfType<NumberReturn>()

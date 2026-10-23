@@ -1,18 +1,14 @@
-﻿namespace Maboroshi.Web.RouteMatching;
+﻿using System.Collections.Concurrent;
+
+namespace Maboroshi.Web.RouteMatching;
 
 internal class UrlMatchingHandler(UrlMatchinStrategyFactory strategyFactory) : IUrlMatchingHandler
 {
-    private readonly Dictionary<string, IUrlMatchingStrategy> _urlMatchingStrategies = [];
+    private readonly ConcurrentDictionary<string, IUrlMatchingStrategy> _urlMatchingStrategies = [];
     
     public bool MatchesRoute(string template, string url)
     {
-        if (_urlMatchingStrategies.TryGetValue(template, out var strategy))
-        {
-            return strategy.IsUrlMatch(url);
-        }
-
-        strategy = strategyFactory.Create(template);
-        _urlMatchingStrategies[template] = strategy;
+        var strategy = _urlMatchingStrategies.GetOrAdd(template, strategyFactory.Create);
         return strategy.IsUrlMatch(url);
     }
 }

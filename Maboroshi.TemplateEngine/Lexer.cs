@@ -2,229 +2,257 @@
 
 internal class Lexer(string source)
 {
+    // Tags that produce no output; a line holding only such a tag is removed entirely (Handlebars "standalone" rule)
+    private static readonly HashSet<string> StandaloneFunctions = ["else", "elsif", "var"];
+
     private readonly string _source = source;
     private readonly List<Token> _tokens = [];
     private int _current;
 
     public IEnumerable<Token> Tokenize()
     {
-        var expressionStarted = false;
-        var start = 0;
-
         while (_current < _source.Length)
         {
-            var c = Advance();
-            if (c == '{' && Peek() == '{')
+            var expressionStart = _source.IndexOf("{{", _current, StringComparison.Ordinal);
+            if (expressionStart < 0)
             {
-                expressionStarted = true;
-                if (start != _current - 1)
-                {
-                    var end = _current - 2;
-                    var b = _source[end];
-                    while (end != 0 && _source[end] == ' ') end--;
-                    _tokens.Add(new Token(TokenType.TEXT, _source[start..(end+1)]));
-                }
-                _tokens.Add(new Token(TokenType.EXPRESSION_START, "{{"));
-                start = _current;
+                _tokens.Add(new Token(TokenType.TEXT, _source[_current..]));
+                break;
             }
-            else if (c == '}' && Peek() == '}')
-            {
-                expressionStarted = false;
-                _tokens.Add(new Token(TokenType.EXPRESSION_END, "}}"));
-                Advance();
-                TryConsume('\r');
-                TryConsume('\n');
-                start = _current;
-            }
-            else if (expressionStarted)
-            {
-                if (Peek() == '(')
-                {
-                    _tokens.Add(new Token(TokenType.SUB_EXP_START, "("));
-                } else if (Peek() == ')')
-                {
-                    _tokens.Add(new Token(TokenType.SUB_EXP_END, ")"));
-                } else
-                {
-                    var token = ReadStringLiteral();
-                    token ??= ReadNumber();
-                    token ??= ReadVariable();
-                    token ??= ReadStartBlock();
-                    token ??= ReadEndBlock();
-                    token ??= ReadFunctionName();
 
-                    if (token != null)
-                    {
-                        _tokens.Add(token);
-                    }
-                }
-            }
-        }
+            if (expressionStart > _current)
+                _tokens.Add(new Token(TokenType.TEXT, _source[_current..expressionStart]));
 
-        if (start != _current)
-        {
-            if (expressionStarted)
-            {
-                throw new InvalidOperationException("Expression was started, but not closed");
-            } else
-            {
-                _tokens.Add(new Token(TokenType.TEXT, _source[start.._current]));
-            }
+            _tokens.Add(new Token(TokenType.EXPRESSION_START, "{{"));
+            _current = expressionStart + 2;
+            TokenizeExpression();
         }
 
         _tokens.Add(new Token(TokenType.EOF, string.Empty));
 
-        return _tokens;
+        return TrimStandaloneLines(_tokens);
     }
 
-    private Token? ReadVariable()
+    private void TokenizeExpression()
     {
-        if (Peek() != '@') return null;
-
-        var start = _current;
-        while (_current < _source.Length)
+        while (true)
         {
-            Advance();
-            if (char.IsWhiteSpace(Peek()) || Peek() == '}')
+            while (_current < _source.Length && char.IsWhiteSpace(_source[_current])) _current++;
+
+            if (_current >= _source.Length)
+                throw new InvalidOperationException("Expression was started, but not closed");
+
+            var c = _source[_current];
+            if (c == '}' && Peek(1) == '}')
             {
-                if (_current == start + 1)
-                    throw new InvalidOperationException("Variable name can't be empty");
-                return new Token(TokenType.VAR_IDENTIFIER, _source[(start+1).._current]);
+                _tokens.Add(new Token(TokenType.EXPRESSION_END, "}}"));
+                _current += 2;
+                return;
             }
-        }
 
-        throw new InvalidOperationException("Expression was started, but not closed");
-    }
-
-    private Token? ReadStringLiteral()
-    {
-        if (Peek() != '\'') return null;
-
-        var start = _current;
-
-        while (_current < _source.Length)
-        {
-            Advance();
-            if (Peek() == '\'')
+            _tokens.Add(c switch
             {
-                return new Token(TokenType.STRING, _source[(start+1).._current]);
-            }
+                '(' => ReadSingleChar(TokenType.SUB_EXP_START),
+                ')' => ReadSingleChar(TokenType.SUB_EXP_END),
+                '\'' => ReadStringLiteral(),
+                '@' => ReadVariable(),
+                '#' => ReadStartBlock(),
+                '/' => ReadEndBlock(),
+                _ when char.IsDigit(c) || (c == '-' && char.IsDigit(Peek(1))) => ReadNumber(),
+                _ => ReadFunctionName()
+            });
         }
-
-        throw new InvalidOperationException("Expression was started, but not closed");
     }
 
-    private Token? ReadNumber()
+    private Token ReadSingleChar(TokenType tokenType)
     {
-        if (!char.IsDigit(Peek())) return null;
+        return new Token(tokenType, _source[_current++].ToString());
+    }
+
+    private Token ReadStringLiteral()
+    {
+        var end = _source.IndexOf('\'', _current + 1);
+        if (end < 0)
+            throw new InvalidOperationException("String literal is not closed");
+
+        var token = new Token(TokenType.STRING, _source[(_current + 1)..end]);
+        _current = end + 1;
+        return token;
+    }
+
+    private Token ReadNumber()
+    {
         var start = _current;
+        if (_source[_current] == '-') _current++;
+        SkipDigits();
 
-        while (_current < _source.Length)
+        if (Peek(0) == '.' && char.IsDigit(Peek(1)))
         {
-            Advance();
-            if (char.IsWhiteSpace(Peek())| Peek() == '}' || Peek() == ')')
-            {
-                return new Token(TokenType.NUMBER, _source[start.._current]);
-            }
-            if (!char.IsDigit(Peek()))
-                throw new InvalidOperationException("Invalid number");
+            _current++;
+            SkipDigits();
         }
 
-        throw new InvalidOperationException("Expression was started, but not closed");
+        if (_current < _source.Length && !IsTerminator(_source[_current]))
+            throw new InvalidOperationException("Invalid number");
+
+        return new Token(TokenType.NUMBER, _source[start.._current]);
     }
 
-    private Token? ReadFunctionName()
+    private Token ReadVariable()
     {
-        static bool IsValidStartCharacter(char ch) => (ch >= '0' && ch <= '9')
-                || (ch >= 'a' && ch <= 'z')
-                || (ch >= 'A' && ch <= 'Z')
-                || ch == '_';
+        _current++;
+        var name = ReadWord();
+        if (name.Length == 0)
+            throw new InvalidOperationException("Variable name can't be empty");
 
-        if (!IsValidStartCharacter(Peek())) return null;
+        return new Token(TokenType.VAR_IDENTIFIER, name);
+    }
 
+    private Token ReadStartBlock()
+    {
+        _current++;
+        var name = ReadWord();
+        if (name.Length == 0)
+            throw new InvalidOperationException("Block name can't be empty");
+
+        return new Token(TokenType.BLOCK_START, name);
+    }
+
+    private Token ReadEndBlock()
+    {
+        _current++;
+        var name = ReadWord();
+        if (name.Length == 0)
+            throw new InvalidOperationException("Block name can't be empty");
+
+        if (name != "end")
+            throw new InvalidOperationException("Block should be closed by 'end' keyword");
+
+        return new Token(TokenType.BLOCK_END, name);
+    }
+
+    private Token ReadFunctionName()
+    {
+        var name = ReadWord();
+        if (name.Length == 0)
+            throw new InvalidOperationException($"Unexpected character '{_source[_current]}'");
+
+        return new Token(TokenType.FUNCTION_NAME, name);
+    }
+
+    private string ReadWord()
+    {
         var start = _current;
+        while (_current < _source.Length && !IsTerminator(_source[_current])) _current++;
+        return _source[start.._current];
+    }
 
-        while (_current < _source.Length)
+    private void SkipDigits()
+    {
+        while (_current < _source.Length && char.IsDigit(_source[_current])) _current++;
+    }
+
+    private static bool IsTerminator(char c) => char.IsWhiteSpace(c) || c is '(' or ')' or '}' or '\'';
+
+    private char Peek(int offset)
+    {
+        var index = _current + offset;
+        return index < _source.Length ? _source[index] : '\0';
+    }
+
+    private static List<Token> TrimStandaloneLines(List<Token> tokens)
+    {
+        var trimEnd = new bool[tokens.Count];
+        var trimStart = new bool[tokens.Count];
+
+        // decisions are made on the original text, so that tags on adjacent lines don't affect each other
+        for (var i = 0; i < tokens.Count; i++)
         {
-            Advance();
-            if (char.IsWhiteSpace(Peek()) || Peek() == '}')
+            if (tokens[i].TokenType != TokenType.EXPRESSION_START)
+                continue;
+
+            var end = tokens.FindIndex(i, t => t.TokenType == TokenType.EXPRESSION_END);
+            if (!IsStandaloneTag(tokens[i + 1]) || !StartsLine(tokens, i) || !EndsLine(tokens, end))
+                continue;
+
+            if (i > 0) trimEnd[i - 1] = true;
+            trimStart[end + 1] = true;
+        }
+
+        var result = new List<Token>(tokens.Count);
+        for (var i = 0; i < tokens.Count; i++)
+        {
+            if (tokens[i].TokenType != TokenType.TEXT || (!trimEnd[i] && !trimStart[i]))
             {
-                return new Token(TokenType.FUNCTION_NAME, _source[start.._current]);
+                result.Add(tokens[i]);
+                continue;
             }
+
+            var text = tokens[i].Value;
+            if (trimEnd[i])
+                text = text.TrimEnd(' ', '\t');
+            if (trimStart[i])
+                text = TrimFirstLineBreak(text);
+
+            if (text.Length > 0)
+                result.Add(new Token(TokenType.TEXT, text));
         }
 
-        throw new InvalidOperationException("Expression was started, but not closed");
+        return result;
     }
 
-    private Token? ReadStartBlock()
+    private static bool IsStandaloneTag(Token firstExpressionToken) => firstExpressionToken.TokenType switch
     {
-        if (Peek() != '#') return null;
+        TokenType.BLOCK_START or TokenType.BLOCK_END => true,
+        TokenType.FUNCTION_NAME => StandaloneFunctions.Contains(firstExpressionToken.Value),
+        _ => false
+    };
 
-        var start = _current;
-        while (_current < _source.Length)
-        {
-            Advance();
-            if (char.IsWhiteSpace(Peek()) || Peek() == '}')
-            {
-                if (_current == start + 1)
-                    throw new InvalidOperationException("Block name can't be empty");
-                return new Token(TokenType.BLOCK_START, _source[(start+1).._current]);
-            }
-        }
+    private static bool StartsLine(List<Token> tokens, int expressionStart)
+    {
+        if (expressionStart == 0)
+            return true;
 
-        throw new InvalidOperationException("Expression was started, but not closed");
+        var previous = tokens[expressionStart - 1];
+        if (previous.TokenType != TokenType.TEXT)
+            return false;
+
+        var lineBreak = previous.Value.LastIndexOf('\n');
+        return IsBlank(previous.Value.AsSpan(lineBreak + 1)) && (lineBreak >= 0 || expressionStart == 1);
     }
 
-    private Token? ReadEndBlock()
+    private static bool EndsLine(List<Token> tokens, int expressionEnd)
     {
-        if (Peek() != '/') return null;
+        var next = tokens[expressionEnd + 1];
+        if (next.TokenType == TokenType.EOF)
+            return true;
 
-        var start = _current;
-        while (_current < _source.Length)
-        {
-            Advance();
-            if (char.IsWhiteSpace(Peek()) || Peek() == '}')
-            {
-                if (_current == start + 1)
-                    throw new InvalidOperationException("Block name can't be empty");
+        if (next.TokenType != TokenType.TEXT)
+            return false;
 
-                if (new string(_source.AsSpan()[(start + 1).._current]) != "end")
-                    throw new InvalidOperationException("Block should be closed by 'end' keyword");
-
-                return new Token(TokenType.BLOCK_END, _source[(start + 1).._current]);
-            }
-        }
-
-        throw new InvalidOperationException("Expression was started, but not closed");
+        var lineBreak = next.Value.IndexOf('\n');
+        return lineBreak >= 0
+            ? IsBlank(next.Value.AsSpan(0, lineBreak))
+            : IsBlank(next.Value) && tokens[expressionEnd + 2].TokenType == TokenType.EOF;
     }
 
-    private char Advance()
+    private static bool IsBlank(ReadOnlySpan<char> text)
     {
-        if (_current >= _source.Length)
+        foreach (var c in text)
         {
-            return '\0';
+            if (c is not (' ' or '\t' or '\r'))
+                return false;
         }
 
-        return _source[_current++];
+        return true;
     }
 
-    private void TryConsume(char c)
+    private static string TrimFirstLineBreak(string text)
     {
-        if (_current >= _source.Length)
-        {
-            return;
-        }
-        
-        if (c == _source[_current]) _current++;
-    }
-
-    private char Peek()
-    {
-        if (_current >= _source.Length)
-        {
-            return '\0';
-        }
-
-        return _source[_current];
+        var i = 0;
+        while (i < text.Length && text[i] is ' ' or '\t') i++;
+        if (i < text.Length && text[i] == '\r') i++;
+        if (i < text.Length && text[i] == '\n') i++;
+        return text[i..];
     }
 }

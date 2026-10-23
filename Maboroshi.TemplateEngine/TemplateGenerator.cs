@@ -9,6 +9,7 @@ public static class TemplateGenerator
         new StringsFunctionResolver(),
         new ArraysFunctionResolver(),
         new MathFunctionResolver(),
+        new DateFunctionResolver(),
         new FakerFunctionResolver(new StaticFakerAdapter())
     ];
 

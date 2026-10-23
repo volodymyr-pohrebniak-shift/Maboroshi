@@ -74,7 +74,7 @@ public class StringsFunctionResolverTests
     [Fact]
     public void PadStart_ShouldPadWithZeros_ByDefault()
     {
-        var result = _resolver.TryResolve("padStart", new StringReturn("42"), new StringReturn("5"));
+        var result = _resolver.TryResolve("padstart", new StringReturn("42"), new StringReturn("5"));
         result.Should().BeOfType<StringReturn>()
               .Which.Value.Should().Be("00042");
     }
@@ -82,7 +82,7 @@ public class StringsFunctionResolverTests
     [Fact]
     public void PadStart_ShouldPadWithCustomCharacter()
     {
-        var result = _resolver.TryResolve("padStart", new StringReturn("42"), new StringReturn("5"), new StringReturn("*"));
+        var result = _resolver.TryResolve("padstart", new StringReturn("42"), new StringReturn("5"), new StringReturn("*"));
         result.Should().BeOfType<StringReturn>()
               .Which.Value.Should().Be("***42");
     }

@@ -61,121 +61,65 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
         if (node.Parameters.Count == 0)
             throw new Exception("if block should have one parameter");
 
-        var metLastElse = false;
-        var elseIndexes  = new List<int>();
+        var branches = new List<(TemplateNode? Condition, int Start, int End)>();
+        TemplateNode? condition = node.Parameters[0];
+        var start = 0;
 
         for (var i = 0; i < node.Body.Count; i++)
         {
-            if (node.Body[i] is not FunctionNode func) continue;
-            switch (func.Name)
+            if (node.Body[i] is not FunctionNode { Name: "else" or "elsif" } clause) continue;
+
+            if (condition is null)
+                throw new Exception("'else' must be the last clause of an if block");
+
+            branches.Add((condition, start, i));
+            start = i + 1;
+
+            if (clause.Name == "else")
             {
-                case "else":
-                    if (metLastElse)
-                        throw new Exception("if block can't have multiple 'else'");
-
-                    if (func.Parameters.Count == 0)
-                    {
-                        metLastElse = true;
-                        elseIndexes.Add(i);
-                    }
-                    else
-                    {
-                        throw new Exception("'else' can't have any parameters");
-                    }
-                    break;
-                case "elsif":
-                    if (func.Parameters.Count == 0)
-                    {
-                        throw new Exception("'elsif' must have a parameter");
-                    }
-                    elseIndexes.Add(i);
-                    break;
-            }
-        }
-
-        var evaluatedParameters = node.Parameters.ConvertAll(x => x.Accept(this));
-
-        var val = evaluatedParameters[0] switch
-        {
-            BoolReturn bVal => bVal.Value,
-            StringReturn stringVal => !string.IsNullOrEmpty(stringVal),
-            ArrayReturn<ReturnType> arrayVal => arrayVal.Values.Length > 0,
-            _ => false,
-        };
-
-        if (val)
-        {
-            if (elseIndexes.Count == 0)
-            {
-                var sb = new StringBuilder();
-                foreach (var body in node.Body)
-                {
-                    _context.InitializeScope();
-
-                    var a = body.Accept(this);
-                    sb.Append(body.Accept(this));
-                    _context.ReleaseScope();
-                }
-
-                return sb.ToString();
+                if (clause.Parameters.Count != 0)
+                    throw new Exception("'else' can't have any parameters");
+                condition = null;
             }
             else
             {
-                var sb = new StringBuilder();
-                foreach (var body in node.Body.Take(elseIndexes[0]))
-                {
-                    _context.InitializeScope();
-
-                    sb.Append(body.Accept(this).GetValue());
-                    _context.ReleaseScope();
-
-                    return sb.ToString();
-                }
+                if (clause.Parameters.Count == 0)
+                    throw new Exception("'elsif' must have a parameter");
+                condition = clause.Parameters[0];
             }
         }
-        else
+
+        branches.Add((condition, start, node.Body.Count));
+
+        foreach (var (branchCondition, from, to) in branches)
         {
-            if (elseIndexes.Count == 0) return string.Empty;
-
-            for (var i = 0; i < elseIndexes.Count - 1; i++)
-            {
-                var clause = node.Body[elseIndexes[i]] as FunctionNode;
-                evaluatedParameters = clause!.Parameters.ConvertAll(x => x.Accept(this));
-
-                val = evaluatedParameters[0] switch
-                {
-                    BoolReturn bVal => bVal.Value,
-                    StringReturn stringVal => !string.IsNullOrEmpty(stringVal),
-                    ArrayReturn<ReturnType> arrayVal => arrayVal.Values.Length > 0,
-                    _ => false,
-                };
-
-                if (val)
-                {
-                    var sb1 = new StringBuilder();
-                    foreach (var body in node.Body.Skip(elseIndexes[i] + 1).Take(elseIndexes[i + 1] - elseIndexes[i] - 1))
-                    {
-                        _context.InitializeScope();
-                        sb1.Append(body.Accept(this));
-                        _context.ReleaseScope();
-                    }
-
-                    return sb1.ToString();
-                }
-            }
-
-            var sb = new StringBuilder();
-            foreach (var body in node.Body.Skip(elseIndexes[^1] + 1))
-            {
-                _context.InitializeScope();
-                sb.Append(body.Accept(this));
-                _context.ReleaseScope();
-
-                return sb.ToString();
-            }
+            if (branchCondition is null || IsTruthy(branchCondition.Accept(this)))
+                return RenderInScope(node.Body.GetRange(from, to - from));
         }
 
         return string.Empty;
+    }
+
+    private static bool IsTruthy(ReturnType value) => value switch
+    {
+        BoolReturn b => b.Value,
+        NumberReturn n => n.Value != 0 && !double.IsNaN(n.Value),
+        StringReturn s => s.Value is not ("" or "0") && !s.Value.Equals("false", StringComparison.OrdinalIgnoreCase),
+        _ => value.GetValue() is Array { Length: > 0 }
+    };
+
+    // variables declared in a block body are visible to the following nodes of that body, but not outside of it
+    private string RenderInScope(IEnumerable<TemplateNode> nodes)
+    {
+        var sb = new StringBuilder();
+        _context.InitializeScope();
+        foreach (var body in nodes)
+        {
+            sb.Append(body.Accept(this));
+        }
+        _context.ReleaseScope();
+
+        return sb.ToString();
     }
 
     private StringReturn EvaluateRepeatBlock(BlockNode node)
@@ -224,15 +168,15 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
             }
 
             var sb = new StringBuilder();
-            _context.InitializeScope();
             for (var i = 0; i < repeatCount; i++)
             {
+                _context.InitializeScope();
                 _context.SetVariable("index", new StringReturn(i.ToString()));
                 foreach (var body in node.Body)
                 {
-                    _context.InitializeScope();
-                    sb.Append(body.Accept(this).GetValue());
+                    sb.Append(body.Accept(this));
                 }
+                _context.ReleaseScope();
 
                 if (i != repeatCount - 1 && !string.IsNullOrEmpty(separator))
                 {
@@ -245,7 +189,6 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
                     }
                 }
             }
-            _context.ReleaseScope();
             return new StringReturn(sb.ToString());
         }
         else
@@ -264,19 +207,17 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
             throw new Exception("each block should have a parameter of an array type");
 
         var sb = new StringBuilder();
-        _context.InitializeScope();
         for (var i = 0; i < array.Values.Length; i++)
         {
+            _context.InitializeScope();
             _context.SetVariable("this", array.Values[i]);
             _context.SetVariable("index", new StringReturn(i.ToString()));
             foreach (var body in node.Body)
             {
-                _context.InitializeScope();
-                sb.Append(body.Accept(this).GetValue());
-                _context.ReleaseScope();
+                sb.Append(body.Accept(this));
             }
+            _context.ReleaseScope();
         }
-        _context.ReleaseScope();
         return new StringReturn(sb.ToString());
     }
 

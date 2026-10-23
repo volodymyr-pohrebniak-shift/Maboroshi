@@ -1,7 +1,18 @@
-﻿namespace Maboroshi.TemplateEngine.FunctionResolvers;
+﻿using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace Maboroshi.TemplateEngine.FunctionResolvers;
 
 internal class StringsFunctionResolver : IFunctionResolver
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        // keeps non-ASCII text readable, the output is still valid JSON
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
+    };
+
     public ReturnType? TryResolve(string functionName, params ReturnType[] additionalArguments)
     {
         return functionName switch
@@ -12,6 +23,7 @@ internal class StringsFunctionResolver : IFunctionResolver
             "substr" => Substr(additionalArguments),
             "split" => Split(additionalArguments),
             "padstart" => PadStart(additionalArguments),
+            "json" => Json(additionalArguments),
             _ => null
         };
     }
@@ -82,4 +94,18 @@ internal class StringsFunctionResolver : IFunctionResolver
 
         return str.Value.PadLeft(totalLength, padChar);
     }
+
+    private static StringReturn Json(ReturnType[] arguments)
+    {
+        if (arguments.Length == 0)
+            throw new Exception("Json function requires a parameter");
+
+        return JsonSerializer.Serialize(ToJsonValue(arguments[0]), JsonOptions);
+    }
+
+    private static object ToJsonValue(ReturnType value) => value.GetValue() switch
+    {
+        ReturnType[] items => items.Select(ToJsonValue).ToArray(),
+        var plain => plain
+    };
 }
