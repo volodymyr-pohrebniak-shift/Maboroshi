@@ -235,6 +235,7 @@ internal class StaticFakerAdapter : IFakerAdapter
             decimal m => new NumberReturn((double)m),
             string s => new StringReturn(s),
             bool b => new BoolReturn(b),
+            DateTime d => new StringReturn(d.ToString()),
             _ => null
         };
     }

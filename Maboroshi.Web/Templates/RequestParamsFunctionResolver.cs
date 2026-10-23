@@ -7,11 +7,11 @@ public class RequestParamsFunctionResolver(RequestAdapter adapter, Action? callb
 {
     public ReturnType? TryResolve(string functionName, params ReturnType[] additionalArguments)
     {
-        return functionName switch
+        return functionName.ToLowerInvariant() switch
         {
-            "queryParam" => ResolveWithParams(adapter.GetQueryParam, additionalArguments),
-            "urlParam" => ResolveWithParams(adapter.GetUrlParam, additionalArguments),
-            "cookieParam" => ResolveWithParams(adapter.GetCookieParam, additionalArguments),
+            "queryparam" => ResolveWithParams(adapter.GetQueryParam, additionalArguments),
+            "urlparam" => ResolveWithParams(adapter.GetUrlParam, additionalArguments),
+            "cookieparam" => ResolveWithParams(adapter.GetCookieParam, additionalArguments),
             "headerParam" => ResolveWithParams(adapter.GetHeaderParam, additionalArguments),
             "hostname" => Resolve(adapter.GetHostname),
             "ip" => Resolve(adapter.GetIp),
