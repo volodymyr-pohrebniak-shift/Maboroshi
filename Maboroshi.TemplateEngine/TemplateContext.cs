@@ -23,7 +23,7 @@ public class TemplateContext
             if (_contexts[i].TryGetValue(name, out var ret))
                 return ret;
         }
-        throw new Exception($"Variable {name} doesn't exist");
+        throw new TemplateRuntimeException($"Variable {name} doesn't exist");
     }
 
     public void SetVariable(string name, ReturnType value)

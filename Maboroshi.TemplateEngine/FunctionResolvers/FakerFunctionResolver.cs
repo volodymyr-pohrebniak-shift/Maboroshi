@@ -43,16 +43,17 @@ internal class FakerFunctionResolver(IFakerAdapter fakerAdapter) : IFunctionReso
         };
     }
 
-    private ReturnType? GetFakerValue(ReturnType[] additionalArguments)
+    private ReturnType GetFakerValue(ReturnType[] additionalArguments)
     {
         if (additionalArguments == null || additionalArguments.Length == 0)
         {
-            throw new Exception("faker function requires a path");
+            throw new TemplateRuntimeException("faker function requires a path");
         }
 
         if (additionalArguments[0] is StringReturn path)
-            return _fakerAdapter.GetFakeValue(path, additionalArguments.Skip(1).ToArray());
+            return _fakerAdapter.GetFakeValue(path, additionalArguments.Skip(1).ToArray())
+                ?? throw new TemplateRuntimeException($"faker path '{path.Value}' is not supported");
         else
-            throw new Exception("faker function requires a path");
+            throw new TemplateRuntimeException("faker function requires a path");
     }
 }

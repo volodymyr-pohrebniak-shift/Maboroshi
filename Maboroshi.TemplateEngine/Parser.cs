@@ -2,21 +2,6 @@
 
 namespace Maboroshi.TemplateEngine;
 
-public class TemplateParsingException : Exception
-{
-    public TemplateParsingException()
-    {
-    }
-
-    public TemplateParsingException(string message) : base(message)
-    {
-    }
-
-    public TemplateParsingException(string message, Exception innerException) : base(message, innerException)
-    {
-    }
-}
-
 internal class Parser(List<Token> tokens)
 {
     private readonly List<Token> _tokens = tokens;
@@ -98,7 +83,7 @@ internal class Parser(List<Token> tokens)
         {
             TokenType.FUNCTION_NAME => ParseFunction(endTokenType),
             TokenType.STRING => new LiteralNode(current.Value),
-            TokenType.NUMBER => new LiteralNode(current.Value),
+            TokenType.NUMBER => new LiteralNode(current.Value, isNumber: true),
             TokenType.VAR_IDENTIFIER => new VariableNode(current.Value),
             TokenType.SUB_EXP_START => ParseExpression(TokenType.SUB_EXP_END),
             _ => throw new TemplateParsingException($"Unexpected token: {current.TokenType}")

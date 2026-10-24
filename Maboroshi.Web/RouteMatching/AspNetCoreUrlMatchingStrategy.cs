@@ -50,11 +50,6 @@ public class AspNetCoreUrlMatchingStrategy : IUrlMatchingStrategy
 
         if (_templateMatcher.TryMatch(url, values))
         {
-            var a = _template.Parameters
-                .Where(parameter => _constraints.ContainsKey(parameter.Name!))
-                .All(parameter => _constraints[parameter.Name!]
-                    .All(x => x.Match(httpContext: null, route: null, parameter.Name!, values, RouteDirection.IncomingRequest)));
-             
             return _template.Parameters
                 .Where(parameter => _constraints.ContainsKey(parameter.Name!))
                 .All(parameter => _constraints[parameter.Name!]

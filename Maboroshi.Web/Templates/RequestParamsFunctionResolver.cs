@@ -24,11 +24,11 @@ public class RequestParamsFunctionResolver(RequestAdapter adapter, Action? callb
     {
         if (arguments.Length == 0 || arguments[0] is not StringReturn paramName)
         {
-            throw new Exception("Parameter name is required.");
+            throw new TemplateRuntimeException("Parameter name is required.");
         }
 
         string paramKey = paramName.Value;
-        string defaultValue = arguments.Length > 1 && arguments[1] is StringReturn defaultVal ? defaultVal.Value : "";
+        string defaultValue = arguments.Length > 1 ? arguments[1].ToString() : "";
         callback?.Invoke();
         return new StringReturn(fetchFunc(paramKey, defaultValue));
     }

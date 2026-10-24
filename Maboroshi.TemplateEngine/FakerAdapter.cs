@@ -17,7 +17,7 @@ internal class StaticFakerAdapter : IFakerAdapter
 
     public ReturnType? GetFakeValue(string name, params ReturnType[] args)
     {
-        object? result = name switch
+        object? result = name.ToLowerInvariant() switch
         {
             // Address
             "address.zipcode" => _faker.Address.ZipCode(),
@@ -43,7 +43,7 @@ internal class StaticFakerAdapter : IFakerAdapter
 
             // Commerce
             "commerce.department" => _faker.Commerce.Department(),
-            "commerce.price" => double.TryParse(_faker.Commerce.Price(), out var price) ? price : _faker.Commerce.Price(),
+            "commerce.price" => NumberOrText(_faker.Commerce.Price()),
             "commerce.categories" => _faker.Commerce.Categories(1)[0],
             "commerce.productname" => _faker.Commerce.ProductName(),
             "commerce.color" => _faker.Commerce.Color(),
@@ -66,25 +66,17 @@ internal class StaticFakerAdapter : IFakerAdapter
             "database.engine" => _faker.Database.Engine(),
 
             // Date
-            "date.past" => args.Length == 2 && args[0] is NumberReturn y1 && args[1] is StringReturn ds1 && TryParseDate(ds1.Value) is DateTime d1
-                ? _faker.Date.Past((int)y1.Value, d1)
-                : _faker.Date.Past(),
+            "date.past" => _faker.Date.Past(IntArg(args, 0, 1), DateArg(args, 1)),
 
-            "date.future" => args.Length == 2 && args[0] is NumberReturn y2 && args[1] is StringReturn ds2 && TryParseDate(ds2.Value) is DateTime d2
-                ? _faker.Date.Future((int)y2.Value, d2)
-                : _faker.Date.Future(),
+            "date.future" => _faker.Date.Future(IntArg(args, 0, 1), DateArg(args, 1)),
 
-            "date.between" => args.Length == 2 && args[0] is StringReturn ds3 && args[1] is StringReturn ds4 && TryParseDate(ds3.Value) is DateTime d3 && TryParseDate(ds4.Value) is DateTime d4
-                ? _faker.Date.Between(d3, d4)
+            "date.between" => args.Length >= 2
+                ? _faker.Date.Between(DateArg(args, 0)!.Value, DateArg(args, 1)!.Value)
                 : _faker.Date.Between(DateTime.Now.AddDays(-10), DateTime.Now),
 
-            "date.recent" => args.Length == 1 && args[0] is NumberReturn days
-                ? _faker.Date.Recent((int)days.Value)
-                : _faker.Date.Recent(),
+            "date.recent" => _faker.Date.Recent(IntArg(args, 0, 1)),
 
-            "date.soon" => args.Length == 1 && args[0] is NumberReturn soonDays
-                ? _faker.Date.Soon((int)soonDays.Value)
-                : _faker.Date.Soon(),
+            "date.soon" => _faker.Date.Soon(IntArg(args, 0, 1)),
 
             // Finance
             "finance.account" => _faker.Finance.Account(),
@@ -164,29 +156,8 @@ internal class StaticFakerAdapter : IFakerAdapter
             // Random
             "number" => GetRandomNumber(args),
             "digits" => int.Parse(_faker.Random.Digits(1)[0].ToString()),
-            "even" => () =>
-            {
-                if (args.Length >= 1)
-                {
-                    var min = args[0] is NumberReturn n ? (int)n.Value : 0;
-                    var max = args.Length > 1 && args[1] is NumberReturn maxV ? (int)maxV.Value : int.MaxValue;
-                    return _faker.Random.Even(min, max);
-                }
-
-                return _faker.Random.Even();
-            }
-            ,
-            "odd" => () =>
-            {
-                if (args.Length >= 1)
-                {
-                    var min = args[0] is NumberReturn n ? (int)n.Value : 0;
-                    var max = args.Length > 1 && args[1] is NumberReturn maxV ? (int)maxV.Value : int.MaxValue;
-                    return _faker.Random.Even(min, max);
-                }
-
-                return _faker.Random.Odd();
-            },
+            "even" => args.Length == 0 ? _faker.Random.Even() : _faker.Random.Even(IntArg(args, 0, 0), IntArg(args, 1, int.MaxValue)),
+            "odd" => args.Length == 0 ? _faker.Random.Odd() : _faker.Random.Odd(IntArg(args, 0, 0), IntArg(args, 1, int.MaxValue)),
             "double" => _faker.Random.Double(),
             "decimal" => _faker.Random.Decimal(),
             "float" => _faker.Random.Float(),
@@ -207,16 +178,7 @@ internal class StaticFakerAdapter : IFakerAdapter
 
             // Misc
             "word" => _faker.Random.Word(),
-            "words" => () =>
-            {
-                if (args.Length >= 1)
-                {
-                    var count = args[0] is NumberReturn n ? (int?)n.Value : null;
-                    return _faker.Random.Words(count);
-                }
-
-                return _faker.Random.Words();
-            },
+            "words" => _faker.Random.Words(args.Length > 0 ? IntArg(args, 0, 1) : null),
             "wordsarray" => string.Join(" ", _faker.Random.WordsArray(3)),
             "guid" => _faker.Random.Guid().ToString(),
             "uuid" => _faker.Random.Uuid().ToString(),
@@ -233,32 +195,46 @@ internal class StaticFakerAdapter : IFakerAdapter
             int i => new NumberReturn(i),
             long l => new NumberReturn(l),
             decimal m => new NumberReturn((double)m),
+            byte or sbyte or short or ushort or uint or ulong => new NumberReturn(Convert.ToDouble(result, CultureInfo.InvariantCulture)),
+            char c => new StringReturn(c.ToString()),
             string s => new StringReturn(s),
             bool b => new BoolReturn(b),
-            DateTime d => new StringReturn(d.ToString()),
+            DateTime d => new StringReturn(d.ToString("o", CultureInfo.InvariantCulture)),
             _ => null
         };
     }
+
+    // a missing argument falls back to the default, an invalid one is an error
+    private static int IntArg(ReturnType[] args, int index, int defaultValue)
+    {
+        if (args.Length <= index)
+            return defaultValue;
+
+        return args[index].TryGetInt(out var value)
+            ? value
+            : throw new TemplateRuntimeException($"argument {index + 1} should be an integer, but got '{args[index]}'");
+    }
+
+    private static DateTime? DateArg(ReturnType[] args, int index)
+    {
+        if (args.Length <= index)
+            return null;
+
+        return TryParseDate(args[index].ToString())
+            ?? throw new TemplateRuntimeException($"argument {index + 1} should be a date, but got '{args[index]}'");
+    }
+
+    private static object NumberOrText(string text) =>
+        double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) ? number : text;
 
     private static DateTime? TryParseDate(string? input)
     {
         return DateTime.TryParse(input, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt) ? dt : null;
     }
 
-    private static int GetRandomNumber(ReturnType[] args)
-    {
-        if (args.Length >= 1)
-        {
-            var min = args[0] is NumberReturn n ? (int)n.Value :
-                args[0] is StringReturn minStr && int.TryParse(minStr, out var parsedMin) ? parsedMin 
-                : 0;
-            var max = args.Length > 1 && args[1] is NumberReturn maxV ? (int)maxV.Value :
-                args[1] is StringReturn maxStr && int.TryParse(maxStr, out var parsedMax) ? parsedMax
-                : int.MaxValue;
-            return _faker.Random.Number(min, max);
-        }
-        return _faker.Random.Number();
-    }
+    private static int GetRandomNumber(ReturnType[] args) => args.Length == 0
+        ? _faker.Random.Number()
+        : _faker.Random.Number(IntArg(args, 0, 0), IntArg(args, 1, int.MaxValue));
 }
 
 internal class FakerDynamicResolver : IFakerAdapter

@@ -14,7 +14,7 @@ internal class VariablesFunctionResolver(TemplateContext context) : IFunctionRes
     private StringReturn Var(ReturnType[] parameters)
     {
         if (parameters.Length < 2 || parameters[0] is not StringReturn str)
-            throw new Exception("Var function should have two parameters");
+            throw new TemplateRuntimeException("Var function should have two parameters");
 
         context.SetVariable(str, parameters[1]);
 

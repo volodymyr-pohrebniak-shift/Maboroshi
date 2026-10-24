@@ -23,7 +23,7 @@ public static class TemplateGenerator
 
             return nodes.Count == 0 || (nodes.Count == 1 && nodes.First() is TextNode) ?
                 new StaticTemplate(templateStr) :
-                new Template(nodes, StaticResolvers);
+                new Template(nodes, StaticResolvers, options.Strict);
         } catch (TemplateParsingException)
         {
             if (!options.Strict)

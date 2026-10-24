@@ -99,7 +99,7 @@ public class LexerTests
     {
         var act = () => Tokenize("{{ # }}");
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<TemplateParsingException>();
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public class LexerTests
     {
         var act = () => Tokenize("{{ @ }}");
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<TemplateParsingException>();
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public class LexerTests
     {
         var act = () => Tokenize("{{ 'hello }}");
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<TemplateParsingException>();
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public class LexerTests
     {
         var act = () => Tokenize("{{ 'hello'");
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<TemplateParsingException>();
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public class LexerTests
     {
         var act = () => Tokenize("{{ /notend }}");
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<TemplateParsingException>();
     }
 
     [Fact]
@@ -170,7 +170,7 @@ public class LexerTests
     {
         var act = () => Tokenize("{{ 1.2.3 }}");
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<TemplateParsingException>();
     }
 
     [Fact]

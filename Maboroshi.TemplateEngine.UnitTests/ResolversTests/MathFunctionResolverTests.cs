@@ -50,10 +50,20 @@ public class MathFunctionResolverTests
     }
 
     [Fact]
-    public void TestEqFalseDifferentTypes()
+    public void TestEqTrueForNumericString()
     {
         var result = _resolver.TryResolve("eq",
-            new NumberReturn(5), new StringReturn("5"));
+            new NumberReturn(5), new StringReturn("5.0"));
+
+        result.Should().BeOfType<BoolReturn>()
+              .Which.Value.Should().BeTrue();
+    }
+
+    [Fact]
+    public void TestEqFalseForDifferentText()
+    {
+        var result = _resolver.TryResolve("eq",
+            new StringReturn("abc"), new StringReturn("abd"));
 
         result.Should().BeOfType<BoolReturn>()
               .Which.Value.Should().BeFalse();

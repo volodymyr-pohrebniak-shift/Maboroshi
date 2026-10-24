@@ -1,5 +1,6 @@
 ﻿using Maboroshi.TemplateEngine.FunctionResolvers;
 using Maboroshi.TemplateEngine.TemplateNodes;
+using System.Globalization;
 using System.Text;
 
 namespace Maboroshi.TemplateEngine;
@@ -28,7 +29,7 @@ public sealed record NumberReturn : ReturnType
     public static implicit operator NumberReturn(double value) => new(value);
 
     public static implicit operator double(NumberReturn result) => result.Value;
-    public override string ToString() => Value.ToString();
+    public override string ToString() => Value.ToString(CultureInfo.InvariantCulture);
 }
 
 public sealed record StringReturn : ReturnType
@@ -55,17 +56,19 @@ public class Template
 {
     private readonly List<TemplateNode> _nodes;
     private readonly IFunctionResolver[] _functionResolvers;
+    private readonly bool _strict;
 
     internal Template()
     {
         _nodes = [];
         _functionResolvers = [];
     }
-    
-    internal Template(List<TemplateNode> nodes, IFunctionResolver[] functionResolvers)
+
+    internal Template(List<TemplateNode> nodes, IFunctionResolver[] functionResolvers, bool strict)
     {
         _nodes = nodes;
         _functionResolvers = functionResolvers;
+        _strict = strict;
     }
 
     public virtual string Compile(params IFunctionResolver[] additionalFunctionResolvers)
@@ -76,12 +79,12 @@ public class Template
             .Append(new VariablesFunctionResolver(templateContext))
             .ToList();
 
-        var templateNodeVisitor = new TemplateNodeVisitor(templateContext, resolvers);
+        var templateNodeVisitor = new TemplateNodeVisitor(templateContext, resolvers, _strict);
 
         var sb = new StringBuilder();
-        foreach (var result in _nodes.Select(node => node.Accept(templateNodeVisitor)))
+        foreach (var node in _nodes)
         {
-            sb.Append(result.ToString());
+            sb.Append(templateNodeVisitor.Render(node));
         }
 
         return sb.ToString();

@@ -30,82 +30,79 @@ internal class StringsFunctionResolver : IFunctionResolver
 
     private static StringReturn LowerCase(ReturnType[] arguments)
     {
-        if (arguments.Length == 0 || arguments[0] is not StringReturn str)
-            throw new Exception("Lowercase function requires a string parameter");
-        return str.Value.ToLower();
+        if (arguments.Length == 0 || !arguments[0].TryGetString(out var str))
+            throw new TemplateRuntimeException("Lowercase function requires a string parameter");
+        return str.ToLowerInvariant();
     }
 
     private static StringReturn UpperCase(ReturnType[] arguments)
     {
-        if (arguments.Length == 0 || arguments[0] is not StringReturn str)
-            throw new Exception("Uppercase function requires a string parameter");
-        return str.Value.ToUpper();
+        if (arguments.Length == 0 || !arguments[0].TryGetString(out var str))
+            throw new TemplateRuntimeException("Uppercase function requires a string parameter");
+        return str.ToUpperInvariant();
     }
 
     private static BoolReturn Includes(ReturnType[] arguments)
     {
         if (arguments.Length < 2)
-            throw new Exception("Includes function requires two parameters (string, searchValue)");
-        if (arguments[0] is not StringReturn str || arguments[1] is not StringReturn search)
-            throw new Exception("Both parameters must be strings");
+            throw new TemplateRuntimeException("Includes function requires two parameters (string, searchValue)");
+        if (!arguments[0].TryGetString(out var str) || !arguments[1].TryGetString(out var search))
+            throw new TemplateRuntimeException("Both parameters must be strings");
 
-        return str.Value.Contains(search);
+        return str.Contains(search);
     }
 
     private static StringReturn Substr(ReturnType[] arguments)
     {
-        if (arguments.Length < 2 || arguments[0] is not StringReturn str || arguments[1] is not StringReturn startStr)
-            throw new Exception("Substr requires at least two parameters: (string, startIndex)");
+        if (arguments.Length < 2 || !arguments[0].TryGetString(out var str))
+            throw new TemplateRuntimeException("Substr requires at least two parameters: (string, startIndex)");
 
-        if (!int.TryParse(startStr, out int startIndex))
-            throw new Exception("Start index must be an integer");
+        if (!arguments[1].TryGetInt(out var startIndex))
+            throw new TemplateRuntimeException("Start index must be an integer");
 
-        int length = str.Value.Length - startIndex; // Default length: rest of the string
+        int length = str.Length - startIndex; // Default length: rest of the string
 
-        if (arguments.Length > 2 && arguments[2] is StringReturn lengthStr && int.TryParse(lengthStr, out int parsedLength))
+        if (arguments.Length > 2 && arguments[2].TryGetInt(out var parsedLength))
         {
             length = parsedLength;
         }
 
-        return str.Value.Substring(startIndex, Math.Min(length, str.Value.Length - startIndex));
+        return str.Substring(startIndex, Math.Min(length, str.Length - startIndex));
     }
 
     private static ArrayReturn<StringReturn> Split(ReturnType[] arguments)
     {
-        if (arguments.Length == 0 || arguments[0] is not StringReturn str)
-            throw new Exception("Split requires at least one parameter (string)");
+        if (arguments.Length == 0 || !arguments[0].TryGetString(out var str))
+            throw new TemplateRuntimeException("Split requires at least one parameter (string)");
 
-        string separator = arguments.Length > 1 && arguments[1] is StringReturn sep ? sep : " ";
+        string separator = arguments.Length > 1 && arguments[1].TryGetString(out var sep) ? sep : " ";
 
-        return new ArrayReturn<StringReturn>(str.Value.Split(separator).Select(x => new StringReturn(x)).ToArray());
+        return new ArrayReturn<StringReturn>(str.Split(separator).Select(x => new StringReturn(x)).ToArray());
     }
 
     private static StringReturn PadStart(ReturnType[] arguments)
     {
-        if (arguments.Length < 2 || arguments[0] is not StringReturn str || arguments[1] is not StringReturn lengthStr)
-            throw new Exception("PadStart requires at least two parameters (string, length)");
+        if (arguments.Length < 2 || !arguments[0].TryGetString(out var str))
+            throw new TemplateRuntimeException("PadStart requires at least two parameters (string, length)");
 
-        if (!int.TryParse(lengthStr, out int totalLength))
-            throw new Exception("Length must be an integer");
+        if (!arguments[1].TryGetInt(out var totalLength))
+            throw new TemplateRuntimeException("Length must be an integer");
 
-        var padChar = arguments.Length > 2 && arguments[2] is StringReturn padStr && padStr.Value.Length > 0
-            ? padStr.Value[0]
+        var padChar = arguments.Length > 2 && arguments[2].TryGetString(out var padStr) && padStr.Length > 0
+            ? padStr[0]
             : '0';
 
-        return str.Value.PadLeft(totalLength, padChar);
+        return str.PadLeft(totalLength, padChar);
     }
 
     private static StringReturn Json(ReturnType[] arguments)
     {
         if (arguments.Length == 0)
-            throw new Exception("Json function requires a parameter");
+            throw new TemplateRuntimeException("Json function requires a parameter");
 
         return JsonSerializer.Serialize(ToJsonValue(arguments[0]), JsonOptions);
     }
 
-    private static object ToJsonValue(ReturnType value) => value.GetValue() switch
-    {
-        ReturnType[] items => items.Select(ToJsonValue).ToArray(),
-        var plain => plain
-    };
+    private static object ToJsonValue(ReturnType value) =>
+        value.TryGetArray(out var items) ? items.Select(ToJsonValue).ToArray() : value.GetValue();
 }

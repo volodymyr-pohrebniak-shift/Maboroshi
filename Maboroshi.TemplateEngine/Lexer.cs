@@ -40,7 +40,7 @@ internal class Lexer(string source)
             while (_current < _source.Length && char.IsWhiteSpace(_source[_current])) _current++;
 
             if (_current >= _source.Length)
-                throw new InvalidOperationException("Expression was started, but not closed");
+                throw new TemplateParsingException("Expression was started, but not closed");
 
             var c = _source[_current];
             if (c == '}' && Peek(1) == '}')
@@ -73,7 +73,7 @@ internal class Lexer(string source)
     {
         var end = _source.IndexOf('\'', _current + 1);
         if (end < 0)
-            throw new InvalidOperationException("String literal is not closed");
+            throw new TemplateParsingException("String literal is not closed");
 
         var token = new Token(TokenType.STRING, _source[(_current + 1)..end]);
         _current = end + 1;
@@ -93,7 +93,7 @@ internal class Lexer(string source)
         }
 
         if (_current < _source.Length && !IsTerminator(_source[_current]))
-            throw new InvalidOperationException("Invalid number");
+            throw new TemplateParsingException("Invalid number");
 
         return new Token(TokenType.NUMBER, _source[start.._current]);
     }
@@ -103,7 +103,7 @@ internal class Lexer(string source)
         _current++;
         var name = ReadWord();
         if (name.Length == 0)
-            throw new InvalidOperationException("Variable name can't be empty");
+            throw new TemplateParsingException("Variable name can't be empty");
 
         return new Token(TokenType.VAR_IDENTIFIER, name);
     }
@@ -113,7 +113,7 @@ internal class Lexer(string source)
         _current++;
         var name = ReadWord();
         if (name.Length == 0)
-            throw new InvalidOperationException("Block name can't be empty");
+            throw new TemplateParsingException("Block name can't be empty");
 
         return new Token(TokenType.BLOCK_START, name);
     }
@@ -123,10 +123,10 @@ internal class Lexer(string source)
         _current++;
         var name = ReadWord();
         if (name.Length == 0)
-            throw new InvalidOperationException("Block name can't be empty");
+            throw new TemplateParsingException("Block name can't be empty");
 
         if (name != "end")
-            throw new InvalidOperationException("Block should be closed by 'end' keyword");
+            throw new TemplateParsingException("Block should be closed by 'end' keyword");
 
         return new Token(TokenType.BLOCK_END, name);
     }
@@ -135,7 +135,7 @@ internal class Lexer(string source)
     {
         var name = ReadWord();
         if (name.Length == 0)
-            throw new InvalidOperationException($"Unexpected character '{_source[_current]}'");
+            throw new TemplateParsingException($"Unexpected character '{_source[_current]}'");
 
         return new Token(TokenType.FUNCTION_NAME, name);
     }
