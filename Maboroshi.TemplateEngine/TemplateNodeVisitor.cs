@@ -5,22 +5,47 @@ using System.Text;
 
 namespace Maboroshi.TemplateEngine;
 
-internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctionResolver> functionResolvers, bool strict) : ITemplateNodeVisitor<ReturnType>
+internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctionResolver> functionResolvers, TemplateCompilationOptions options) : ITemplateNodeVisitor<ReturnType>
 {
     private readonly TemplateContext _context = context;
     private readonly IEnumerable<IFunctionResolver> _functionResolvers = functionResolvers;
+    private int _iterations;
+
+    public string RenderAll(IEnumerable<TemplateNode> nodes)
+    {
+        var sb = new StringBuilder();
+        foreach (var node in nodes)
+        {
+            sb.Append(Render(node));
+            CheckOutputLength(sb);
+        }
+
+        return sb.ToString();
+    }
 
     // in non-strict mode a node that fails at runtime is rendered as empty text instead of failing the whole template
-    public string Render(TemplateNode node)
+    private string Render(TemplateNode node)
     {
         try
         {
             return node.Accept(this).ToString();
         }
-        catch (TemplateRuntimeException) when (!strict)
+        catch (TemplateRuntimeException) when (!options.Strict)
         {
             return string.Empty;
         }
+    }
+
+    private void CountIteration()
+    {
+        if (++_iterations > options.MaxIterations)
+            throw new TemplateLimitExceededException($"Template exceeded the limit of {options.MaxIterations} loop iterations");
+    }
+
+    private void CheckOutputLength(StringBuilder sb)
+    {
+        if (sb.Length > options.MaxOutputLength)
+            throw new TemplateLimitExceededException($"Template output exceeded the limit of {options.MaxOutputLength} characters");
     }
 
     public ReturnType VisitFunctionNode(FunctionNode node)
@@ -131,7 +156,6 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
     // variables declared in a block body are visible to the following nodes of that body, but not outside of it
     private string RenderInScope(IEnumerable<TemplateNode> nodes, params (string Name, ReturnType Value)[] variables)
     {
-        var sb = new StringBuilder();
         _context.InitializeScope();
         try
         {
@@ -140,17 +164,12 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
                 _context.SetVariable(name, value);
             }
 
-            foreach (var body in nodes)
-            {
-                sb.Append(Render(body));
-            }
+            return RenderAll(nodes);
         }
         finally
         {
             _context.ReleaseScope();
         }
-
-        return sb.ToString();
     }
 
     private StringReturn EvaluateRepeatBlock(BlockNode node)
@@ -188,7 +207,9 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
         var sb = new StringBuilder();
         for (var i = 0; i < repeatCount; i++)
         {
+            CountIteration();
             sb.Append(RenderInScope(node.Body, ("index", new NumberReturn(i))));
+            CheckOutputLength(sb);
 
             if (i != repeatCount - 1 && !string.IsNullOrEmpty(separator))
             {
@@ -216,7 +237,9 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
         var sb = new StringBuilder();
         for (var i = 0; i < items.Length; i++)
         {
+            CountIteration();
             sb.Append(RenderInScope(node.Body, ("this", items[i]), ("index", new NumberReturn(i))));
+            CheckOutputLength(sb);
         }
         return new StringReturn(sb.ToString());
     }

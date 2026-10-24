@@ -1,7 +1,6 @@
 ﻿using Maboroshi.TemplateEngine.FunctionResolvers;
 using Maboroshi.TemplateEngine.TemplateNodes;
 using System.Globalization;
-using System.Text;
 
 namespace Maboroshi.TemplateEngine;
 
@@ -56,19 +55,20 @@ public class Template
 {
     private readonly List<TemplateNode> _nodes;
     private readonly IFunctionResolver[] _functionResolvers;
-    private readonly bool _strict;
+    private readonly TemplateCompilationOptions _options;
 
     internal Template()
     {
         _nodes = [];
         _functionResolvers = [];
+        _options = new TemplateCompilationOptions(false);
     }
 
-    internal Template(List<TemplateNode> nodes, IFunctionResolver[] functionResolvers, bool strict)
+    internal Template(List<TemplateNode> nodes, IFunctionResolver[] functionResolvers, TemplateCompilationOptions options)
     {
         _nodes = nodes;
         _functionResolvers = functionResolvers;
-        _strict = strict;
+        _options = options;
     }
 
     public virtual string Compile(params IFunctionResolver[] additionalFunctionResolvers)
@@ -79,14 +79,8 @@ public class Template
             .Append(new VariablesFunctionResolver(templateContext))
             .ToList();
 
-        var templateNodeVisitor = new TemplateNodeVisitor(templateContext, resolvers, _strict);
+        var templateNodeVisitor = new TemplateNodeVisitor(templateContext, resolvers, _options);
 
-        var sb = new StringBuilder();
-        foreach (var node in _nodes)
-        {
-            sb.Append(templateNodeVisitor.Render(node));
-        }
-
-        return sb.ToString();
+        return templateNodeVisitor.RenderAll(_nodes);
     }
 }

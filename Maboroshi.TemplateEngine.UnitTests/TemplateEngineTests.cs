@@ -305,6 +305,44 @@ public class TemplateEngineTests
         act.Should().Throw<TemplateParsingException>();
     }
 
+    [Theory]
+    [InlineData("{{#repeat 11}}x{{/end}}", false)]
+    [InlineData("{{#repeat 11}}x{{/end}}", true)]
+    [InlineData("{{#repeat 4}}{{#repeat 4}}x{{/end}}{{/end}}", false)]
+    [InlineData("{{#each (array 1 2 3 4 5 6 7 8 9 10 11)}}{{@this}}{{/end}}", false)]
+    public void Compile_ShouldFail_WhenIterationLimitIsExceeded_RegardlessOfStrictMode(string template, bool strict)
+    {
+        var act = () => TemplateGenerator.CreateTemplate(template, new(strict, MaxIterations: 10)).Compile();
+
+        act.Should().Throw<TemplateLimitExceededException>();
+    }
+
+    [Fact]
+    public void Compile_ShouldCountIterations_PerRender()
+    {
+        var template = TemplateGenerator.CreateTemplate("{{#repeat 10}}x{{/end}}", new(false, MaxIterations: 10));
+
+        template.Compile().Should().Be("xxxxxxxxxx");
+        template.Compile().Should().Be("xxxxxxxxxx");
+    }
+
+    [Theory]
+    [InlineData("{{#repeat 3}}abcd{{/end}}")]
+    [InlineData("ab{{ padStart 'c' 20 }}")]
+    public void Compile_ShouldFail_WhenOutputLimitIsExceeded(string template)
+    {
+        var act = () => TemplateGenerator.CreateTemplate(template, new(false, MaxOutputLength: 10)).Compile();
+
+        act.Should().Throw<TemplateLimitExceededException>();
+    }
+
+    [Fact]
+    public void Compile_ShouldRender_WhenOutputFitsTheLimit()
+    {
+        TemplateGenerator.CreateTemplate("{{#repeat 3}}abcd{{/end}}", new(false, MaxOutputLength: 12)).Compile()
+            .Should().Be("abcdabcdabcd");
+    }
+
     private static string Compile(string template, bool strict = false) =>
         TemplateGenerator.CreateTemplate(template, new(strict)).Compile();
 }

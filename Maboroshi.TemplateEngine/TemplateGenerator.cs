@@ -23,7 +23,7 @@ public static class TemplateGenerator
 
             return nodes.Count == 0 || (nodes.Count == 1 && nodes.First() is TextNode) ?
                 new StaticTemplate(templateStr) :
-                new Template(nodes, StaticResolvers, options.Strict);
+                new Template(nodes, StaticResolvers, options);
         } catch (TemplateParsingException)
         {
             if (!options.Strict)
@@ -33,4 +33,6 @@ public static class TemplateGenerator
     }
 }
 
-public record TemplateCompilationOptions(bool Strict);
+// MaxIterations limits all repeat/each iterations of one render together, so nested loops can't multiply past it;
+// MaxOutputLength is in characters
+public record TemplateCompilationOptions(bool Strict, int MaxIterations = 10_000, int MaxOutputLength = 5 * 1024 * 1024);

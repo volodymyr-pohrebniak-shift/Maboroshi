@@ -15,7 +15,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
 	  <PackageReference Include="Microsoft.AspNetCore.SpaProxy">
-		  <Version>8.*-*</Version>
+		  <Version>8.0.26</Version>
 	  </PackageReference>
   </ItemGroup>
 
