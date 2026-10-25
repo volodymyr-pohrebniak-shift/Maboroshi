@@ -19,7 +19,7 @@ public static class TemplateGenerator
         try
         {
             var lexer = new Lexer(templateStr);
-            var nodes = new Parser([.. lexer.Tokenize()]).Parse();
+            var nodes = new Parser([.. lexer.Tokenize()], options.MaxDepth).Parse();
 
             return nodes.Count == 0 || (nodes.Count == 1 && nodes.First() is TextNode) ?
                 new StaticTemplate(templateStr) :
@@ -34,5 +34,14 @@ public static class TemplateGenerator
 }
 
 // MaxIterations limits all repeat/each iterations of one render together, so nested loops can't multiply past it;
-// MaxOutputLength is in characters
-public record TemplateCompilationOptions(bool Strict, int MaxIterations = 10_000, int MaxOutputLength = 5 * 1024 * 1024);
+// MaxOutputLength is in characters;
+// MaxDepth limits nesting of blocks, sub-expressions and arrays: parsing and rendering are recursive,
+// and a stack overflow can't be caught, it terminates the whole process
+public record TemplateCompilationOptions(
+    bool Strict,
+    int MaxIterations = 10_000,
+    int MaxOutputLength = 5 * 1024 * 1024,
+    int MaxDepth = TemplateCompilationOptions.DefaultMaxDepth)
+{
+    public const int DefaultMaxDepth = 100;
+}

@@ -343,6 +343,58 @@ public class TemplateEngineTests
             .Should().Be("abcdabcdabcd");
     }
 
+    [Theory]
+    [InlineData("(", "1", ")", true)]
+    [InlineData("(uppercase ", "'a'", ")", true)]
+    [InlineData("{{#if 'y'}}", "x", "{{/end}}", false)]
+    public void CreateTemplate_ShouldRejectDeepNesting_InsteadOfOverflowingTheStack(string open, string inner, string close, bool inExpression)
+    {
+        // deep enough to overflow the stack without the limit, which would crash the test run instead of failing this test
+        var nested = string.Concat(Enumerable.Repeat(open, 5000)) + inner + string.Concat(Enumerable.Repeat(close, 5000));
+        var template = inExpression ? "{{ " + nested + " }}" : nested;
+
+        var act = () => Compile(template, strict: true);
+
+        act.Should().Throw<TemplateParsingException>().WithMessage("*nesting is too deep*");
+        Compile(template).Should().Be(template);
+    }
+
+    [Fact]
+    public void CreateTemplate_ShouldAllowNesting_UpToTheLimit()
+    {
+        var options = new TemplateCompilationOptions(true, MaxDepth: 3);
+
+        TemplateGenerator.CreateTemplate("{{ ((1)) }}", options).Compile().Should().Be("1");
+
+        var act = () => TemplateGenerator.CreateTemplate("{{ (((1))) }}", options);
+
+        act.Should().Throw<TemplateParsingException>();
+    }
+
+    [Fact]
+    public void Compile_ShouldRejectDeeplyNestedArrays_RegardlessOfStrictMode()
+    {
+        // every line is shallow, the depth comes from nesting values, which the parser doesn't see
+        var template = "{{var 'a' 1}}" + string.Concat(Enumerable.Repeat("{{var 'a' (array @a)}}", 5000)) + "{{json @a}}";
+
+        var act = () => Compile(template);
+
+        act.Should().Throw<TemplateLimitExceededException>().WithMessage("*nested too deep*");
+    }
+
+    [Fact]
+    public void Compile_ShouldAllowNestedArrays_UpToTheLimit()
+    {
+        var options = new TemplateCompilationOptions(true, MaxDepth: 3);
+        const string threeLevels = "{{var 'a' (array 1)}}{{var 'a' (array @a)}}{{var 'a' (array @a)}}";
+
+        TemplateGenerator.CreateTemplate(threeLevels + "{{@a}}", options).Compile().Should().Be("1");
+
+        var act = () => TemplateGenerator.CreateTemplate(threeLevels + "{{var 'a' (array @a)}}", options).Compile();
+
+        act.Should().Throw<TemplateLimitExceededException>();
+    }
+
     private static string Compile(string template, bool strict = false) =>
         TemplateGenerator.CreateTemplate(template, new(strict)).Compile();
 }

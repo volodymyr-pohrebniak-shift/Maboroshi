@@ -1,11 +1,13 @@
 ﻿using Maboroshi.TemplateEngine.TemplateNodes;
+using System.Runtime.CompilerServices;
 
 namespace Maboroshi.TemplateEngine;
 
-internal class Parser(List<Token> tokens)
+internal class Parser(List<Token> tokens, int maxDepth = TemplateCompilationOptions.DefaultMaxDepth)
 {
     private readonly List<Token> _tokens = tokens;
     private int _current;
+    private int _depth;
     private Token Current => _tokens[_current];
     private Token Previous => _tokens[_current - 1];
 
@@ -42,7 +44,24 @@ internal class Parser(List<Token> tokens)
 
         throw new TemplateParsingException($"Unexpected token: {Current.TokenType}");
     }
+    // every nested block and sub-expression goes through here, so the limit bounds the recursion of both parsing and rendering;
+    // the parse has to stop right away, a stack overflow can't be caught
     private TemplateNode? ParseExpression(TokenType endTokenType = TokenType.EXPRESSION_END)
+    {
+        if (++_depth > maxDepth || !RuntimeHelpers.TryEnsureSufficientExecutionStack())
+            throw new TemplateParsingException($"Template nesting is too deep, the limit is {maxDepth} levels");
+
+        try
+        {
+            return ParseExpressionBody(endTokenType);
+        }
+        finally
+        {
+            _depth--;
+        }
+    }
+
+    private TemplateNode? ParseExpressionBody(TokenType endTokenType)
     {
         if (Current.TokenType == TokenType.BLOCK_START)
         {

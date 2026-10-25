@@ -7,6 +7,9 @@ namespace Maboroshi.TemplateEngine;
 public abstract record ReturnType
 {
     public abstract object GetValue();
+
+    // how many arrays are nested in the value; printing and json are recursive, so it's kept within MaxDepth
+    internal virtual int Depth => 0;
 }
 
 public sealed record BoolReturn : ReturnType
@@ -46,7 +49,12 @@ public sealed record StringReturn : ReturnType
 public sealed record ArrayReturn<T> : ReturnType where T : ReturnType
 {
     public T[] Values { get; }
-    public ArrayReturn(T[] values) => Values = values;
+    public ArrayReturn(T[] values)
+    {
+        Values = values;
+        Depth = 1 + (values.Length == 0 ? 0 : values.Max(v => v.Depth));
+    }
+    internal override int Depth { get; }
     public override object GetValue() => Values;
     public override string ToString() => string.Join(",", Values.Select(v => v.ToString()));
 }

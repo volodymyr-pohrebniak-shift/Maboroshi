@@ -65,8 +65,14 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
                 throw new TemplateRuntimeException($"function {node.Name} failed: {e.Message}", e);
             }
 
-            if (result is not null)
-                return result;
+            if (result is null)
+                continue;
+
+            // only functions create arrays, so checking their results keeps every value within the limit
+            if (result.Depth > options.MaxDepth)
+                throw new TemplateLimitExceededException($"Arrays are nested too deep, the limit is {options.MaxDepth} levels");
+
+            return result;
         }
 
         throw new TemplateRuntimeException($"function {node.Name} is not defined");
