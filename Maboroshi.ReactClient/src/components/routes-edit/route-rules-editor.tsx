@@ -29,14 +29,16 @@ const FIELD_OPTIONS = [
   { value: "Query", label: "Query" },
   { value: "Route", label: "Route" },
   { value: "Cookie", label: "Cookie" },
-  { value: "Body", label: "Body" },
 ];
 
+// must match MatchingRuleOperation on the server
 const OPERATION_OPTIONS = [
   { value: "Equals", label: "Equals" },
   { value: "Contains", label: "Contains" },
   { value: "StartsWith", label: "Starts With" },
   { value: "EndsWith", label: "Ends With" },
+  { value: "Regex", label: "Regex" },
+  { value: "NullOrEmpty", label: "Is Empty" },
 ];
 
 const findRuleAtPath = (rules: Rule[], path: string[]): Rule | undefined => {
@@ -407,7 +409,7 @@ export function RulesEditor() {
 
       {group.rules.length === 0 && (
         <div className="text-muted-foreground text-sm pl-6">
-          No rules in this group. Add a rule or group.
+          An empty group can't be saved. Add a rule or a group.
         </div>
       )}
     </div>

@@ -77,6 +77,7 @@ public class RequestProcessor(IMockedRouteStore routesStore, TemplateResolver te
             RouteParameters = UrlParameterExtractor.Extract(urlTemplate, request.Path),
             QueryParameters = request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
             Headers = request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString()),
+            CookieParameters = request.Cookies.ToDictionary(x => x.Key, x => x.Value),
         };
     }
 }

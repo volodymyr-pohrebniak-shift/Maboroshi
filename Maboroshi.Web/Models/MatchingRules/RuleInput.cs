@@ -1,6 +1,6 @@
 ﻿namespace Maboroshi.Web.Models.MatchingRules;
 
-public record RuleInput : IQueryRuleInput, IHeaderRuleInput, IRouteRuleInput
+public record RuleInput : IQueryRuleInput, IHeaderRuleInput, IRouteRuleInput, ICookieRuleInput
 {
     public required Dictionary<string, string> Headers { get; init; }
 

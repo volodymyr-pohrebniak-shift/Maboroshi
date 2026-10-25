@@ -5,6 +5,12 @@ namespace Maboroshi.UnitTests.MatchingRules;
 public class AggregateMatchingRuleTests
 {
     [Fact]
+    public void AggregateRule_ShouldNotBeCreated_WithoutRules()
+    {
+        Assert.Throws<ArgumentException>(() => new AggregateRule([], AggregateRuleOperation.AND));
+    }
+
+    [Fact]
     public void AggregateRule_ShouldMatch_WhenAllRulesMatch_WithAND()
     {
         var rules = new List<IMatchingRule>

@@ -4,61 +4,56 @@ using Maboroshi.Web.Models.MatchingRules;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 
+// Picks the rule class by its "type" property wherever it's placed in the object:
+// built-in polymorphism in .NET 8 requires "type" to come first, which clients don't guarantee
 public class JsonMatchingRuleConverter : JsonConverter<IMatchingRule>
 {
+    private static readonly Dictionary<string, Type> RuleTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Header"] = typeof(HeaderMatchingRule),
+        ["Query"] = typeof(QueryMatchingRule),
+        ["Route"] = typeof(RouteMatchingRule),
+        ["Cookie"] = typeof(CookieMatchingRule),
+        ["Aggregate"] = typeof(AggregateRule),
+    };
+
     public override IMatchingRule Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        using (var jsonDoc = JsonDocument.ParseValue(ref reader))
+        using var jsonDoc = JsonDocument.ParseValue(ref reader);
+        var jsonObject = jsonDoc.RootElement;
+
+        string? typeName = null;
+        if (jsonObject.ValueKind == JsonValueKind.Object)
         {
-            var jsonObject = jsonDoc.RootElement;
-
-            if (jsonObject.TryGetProperty("operation", out var opProp) && Enum.TryParse<AggregateRuleOperation>(opProp.GetString()!, true, out var operation))
+            foreach (var property in jsonObject.EnumerateObject())
             {
-                var rulesJson = jsonObject.GetProperty("rules").GetRawText();
-
-                var rules = JsonSerializer.Deserialize<IEnumerable<IMatchingRule>>(rulesJson, options)
-                            ?? [];
-
-                return new AggregateRule(rules, operation);
-            }
-            else if (jsonObject.TryGetProperty("type", out var typeProp))
-            {
-                var type = typeProp.GetString();
-
-                return type switch
-                {
-                    "Header" => JsonSerializer.Deserialize<HeaderMatchingRule>(jsonObject.GetRawText(), options)!,
-                    "Query" => JsonSerializer.Deserialize<QueryMatchingRule>(jsonObject.GetRawText(), options)!,
-                    "Route" => JsonSerializer.Deserialize<RouteMatchingRule>(jsonObject.GetRawText(), options)!,
-                    _ => throw new NotSupportedException($"Rule type '{type}' is not supported.")
-                };
+                if (property.Name.Equals("type", StringComparison.OrdinalIgnoreCase) && property.Value.ValueKind == JsonValueKind.String)
+                    typeName = property.Value.GetString();
             }
         }
-        throw new JsonException("Invalid JSON for rule deserialization.");
+
+        if (typeName is null || !RuleTypes.TryGetValue(typeName, out var ruleType))
+            throw new JsonException($"Rule type '{typeName}' is not supported.");
+
+        try
+        {
+            return (IMatchingRule)jsonObject.Deserialize(ruleType, options)!;
+        }
+        // rule constructors validate their arguments
+        catch (ArgumentException e)
+        {
+            throw new JsonException($"Invalid {typeName} rule: {e.Message}", e);
+        }
     }
 
     public override void Write(Utf8JsonWriter writer, IMatchingRule value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
-        /*
-        switch (value)
+        writer.WriteString("type", RuleTypes.First(x => x.Value == value.GetType()).Key);
+        foreach (var property in JsonSerializer.SerializeToElement(value, value.GetType(), options).EnumerateObject())
         {
-            case SingleOperationMatchingRule singleRule:
-                writer.WriteString("type", value.GetType().Name);
-                writer.WriteString("key", singleRule.Key);
-                writer.WriteString("value", singleRule.Value);
-                writer.WriteBoolean("negate", singleRule.Negate);
-                writer.WriteString("operation", singleRule.Operation.ToString());
-                break;
-
-            case AggregateRule aggregateRule:
-                writer.WriteString("type", nameof(AggregateRule));
-                writer.WritePropertyName("rules");
-                JsonSerializer.Serialize(writer, aggregateRule.rules, options);
-                writer.WriteString("op", aggregateRule.op.ToString());
-                break;
+            property.WriteTo(writer);
         }
-        */
         writer.WriteEndObject();
     }
 }

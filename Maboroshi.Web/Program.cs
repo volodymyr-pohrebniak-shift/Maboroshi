@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Maboroshi.Web.Converters;
 using Maboroshi.Web.RouteMatching;
 using Maboroshi.Web.Services;
 using Maboroshi.Web.Templates;
@@ -24,6 +26,8 @@ public static class Program
             return provider;
         });
 
+        builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonMatchingRuleConverter()));
+
         builder.Services.AddMemoryCache();
         builder.Services.AddScoped<RequestProcessor>();
         builder.Services.AddSingleton<TemplateResolver>();
@@ -42,10 +46,25 @@ public static class Program
 
         app.MapGet("/$$$SYSTEM$$$/environments", (EnvironmentsProvider environmentsProvider) => environmentsProvider.GetEnvironments());
 
-        app.MapPut("/$$$SYSTEM$$$/environments", (Models.Environment[] environtments, EnvironmentsProvider environmentsProvider, ICacheResetTokenProvider tokenProvider) => {
-            environmentsProvider.SetEnvironments(environtments);
+        app.MapPut("/$$$SYSTEM$$$/environments", async (HttpRequest request, EnvironmentsProvider environmentsProvider, ICacheResetTokenProvider tokenProvider) =>
+        {
+            // the body is read manually to report invalid configuration as 400 with a reason, model constructors throw ArgumentException
+            Models.Environment[]? environments;
+            try
+            {
+                environments = await request.ReadFromJsonAsync<Models.Environment[]>();
+            }
+            catch (Exception e) when (e is JsonException or ArgumentException)
+            {
+                return Results.Problem(e.Message, statusCode: StatusCodes.Status400BadRequest, title: "Invalid configuration");
+            }
+
+            if (environments is null)
+                return Results.Problem("Environments are required", statusCode: StatusCodes.Status400BadRequest, title: "Invalid configuration");
+
+            environmentsProvider.SetEnvironments(environments);
             tokenProvider.CancelAndRefresh();
-            Results.Ok();
+            return Results.Ok();
         });
 
         app.Map("{**catchAll}", async (HttpContext context, RequestProcessor requestProcessor) => await requestProcessor.Process(context));

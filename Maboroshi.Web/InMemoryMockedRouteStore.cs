@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using Maboroshi.Web.Models;
+﻿using Maboroshi.Web.Models;
 using Maboroshi.Web.RouteMatching;
 
 namespace Maboroshi.Web;
@@ -7,7 +6,7 @@ namespace Maboroshi.Web;
 public class InMemoryMockedRouteStore(IUrlMatchingHandler urlMatchingHandler)
     : IMockedRouteStore
 {
-    private ConcurrentBag<MockedRoute> _routes = [];
+    private volatile MockedRoute[] _routes = [];
 
     public void SetRoutes(IEnumerable<MockedRoute> routes)
     {

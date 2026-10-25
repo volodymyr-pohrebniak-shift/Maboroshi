@@ -3,7 +3,8 @@ import { useAtom } from "jotai";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
 import { v4 as uuidv4 } from "uuid";
-import { ChevronLeft, ChevronRight, PlusCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Circle, CircleCheck, PlusCircle } from "lucide-react";
+import { Tooltip } from "./ui/tooltip";
 import {
   Environment,
   environmentsAtom,
@@ -31,6 +32,13 @@ export function EnvironmentSidebar() {
     };
     setEnvironments([...environments, newEnvironment]);
   };
+
+  const makeActive = (id: string) => {
+    setEnvironments(environments.map((env) => ({ ...env, active: env.id === id })));
+  };
+
+  // the server serves the first environment when none is marked active
+  const activeEnvironmentId = environments.find((env) => env.active)?.id ?? environments[0]?.id;
 
   return (
     <div
@@ -70,14 +78,30 @@ export function EnvironmentSidebar() {
         <ScrollArea className="flex-grow">
           <div className="p-4 space-y-2">
             {environments.map((env) => (
-              <Button
-                key={env.id}
-                variant={selectedEnvironmentId === env.id ? "default" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => setSelectedEnvironmentId(env.id)}
-              >
-                {env.name}
-              </Button>
+              <div key={env.id} className="flex items-center space-x-1">
+                <Button
+                  variant={selectedEnvironmentId === env.id ? "default" : "ghost"}
+                  className="flex-1 justify-start"
+                  onClick={() => setSelectedEnvironmentId(env.id)}
+                >
+                  {env.name}
+                </Button>
+                <Tooltip
+                  content={
+                    env.id === activeEnvironmentId
+                      ? "Active environment"
+                      : "Make active (applies after saving)"
+                  }
+                >
+                  <Button variant="ghost" size="icon" onClick={() => makeActive(env.id)}>
+                    {env.id === activeEnvironmentId ? (
+                      <CircleCheck className="h-4 w-4 text-primary" />
+                    ) : (
+                      <Circle className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </Tooltip>
+              </div>
             ))}
           </div>
         </ScrollArea>

@@ -18,6 +18,8 @@ public abstract class SingleOperationMatchingRule(string? key, string? value, Ma
         {
             MatchingRuleOperation.Equals => Negate ^ Value.Equals(input),
             MatchingRuleOperation.Contains => Negate ^ input!.Contains(Value),
+            MatchingRuleOperation.StartsWith => Negate ^ input!.StartsWith(Value, StringComparison.Ordinal),
+            MatchingRuleOperation.EndsWith => Negate ^ input!.EndsWith(Value, StringComparison.Ordinal),
             MatchingRuleOperation.NullOrEmpty => Negate ^ string.IsNullOrEmpty(input),
             MatchingRuleOperation.Regex => Negate ^ new Regex(Value).IsMatch(input!),
             _ => throw new NotImplementedException($"Operation {Operation} not implemented.")
@@ -30,5 +32,7 @@ public enum MatchingRuleOperation
     Equals,
     Contains,
     Regex,
-    NullOrEmpty
+    NullOrEmpty,
+    StartsWith,
+    EndsWith
 }

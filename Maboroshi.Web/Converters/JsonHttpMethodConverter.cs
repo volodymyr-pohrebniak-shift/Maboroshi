@@ -53,13 +53,15 @@ public class JsonHttpMethodConverter : JsonConverter<HttpMethod>
         throw new JsonException($"Unexpected token type: {reader.TokenType}");
     }
 
+    // written as an array, which is what the client works with; Read accepts both forms
     public override void Write(Utf8JsonWriter writer, HttpMethod value, JsonSerializerOptions options)
     {
-        var enumValues = value
-            .ToString()
-            .Split(", ")
-            .Select(v => v.ToUpper());
-
-        writer.WriteStringValue(string.Join(", ", enumValues));
+        writer.WriteStartArray();
+        foreach (var method in Enum.GetValues<HttpMethod>())
+        {
+            if (method != HttpMethod.NONE && value.HasFlag(method))
+                writer.WriteStringValue(method.ToString());
+        }
+        writer.WriteEndArray();
     }
 }

@@ -8,7 +8,7 @@ export type BaseRule = {
 };
 
 export type SimpleRule = BaseRule & {
-  type: "Header" | "Query" | "Cookie " | "Body" | "Route";
+  type: "Header" | "Query" | "Cookie" | "Route";
   key: string;
   operation: string;
   value: string;

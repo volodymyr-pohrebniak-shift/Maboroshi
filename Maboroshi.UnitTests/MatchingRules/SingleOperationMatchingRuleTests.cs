@@ -62,9 +62,49 @@ public class SingleOperationMatchingRuleTests
     }
 
     [Theory]
+    [InlineData("session", "abc", "abc", false, true)]
+    [InlineData("session", "abc", "abd", false, false)]
+    [InlineData("session", "abc", "abc", true, false)]
+    public void MatchingRule_ShouldEvaluate_Cookie(string key, string value, string cookie, bool negate, bool expectedResult)
+    {
+        var rule = new CookieMatchingRule(key, value, MatchingRuleOperation.Equals, negate);
+
+        var input = new RuleInput
+        {
+            Headers = [],
+            QueryParameters = [],
+            RouteParameters = [],
+            CookieParameters = new Dictionary<string, string> { { key, cookie } }
+        };
+
+        Assert.Equal(expectedResult, rule.Evaluate(input));
+    }
+
+    [Theory]
+    [InlineData(MatchingRuleOperation.StartsWith, "Bearer", "Bearer token", true)]
+    [InlineData(MatchingRuleOperation.StartsWith, "bearer", "Bearer token", false)]
+    [InlineData(MatchingRuleOperation.StartsWith, "token", "Bearer token", false)]
+    [InlineData(MatchingRuleOperation.EndsWith, "token", "Bearer token", true)]
+    [InlineData(MatchingRuleOperation.EndsWith, "Bearer", "Bearer token", false)]
+    public void MatchingRule_ShouldEvaluate_StartsWithAndEndsWith(MatchingRuleOperation operation, string value, string header, bool expectedResult)
+    {
+        var rule = new HeaderMatchingRule("Authorization", value, operation, false);
+
+        var input = new RuleInput
+        {
+            Headers = new Dictionary<string, string> { { "Authorization", header } },
+            QueryParameters = [],
+            RouteParameters = []
+        };
+
+        Assert.Equal(expectedResult, rule.Evaluate(input));
+    }
+
+    [Theory]
     [InlineData(typeof(HeaderMatchingRule))]
     [InlineData(typeof(RouteMatchingRule))]
     [InlineData(typeof(QueryMatchingRule))]
+    [InlineData(typeof(CookieMatchingRule))]
     public void Rule_ShouldThrowArgumentNullException_WhenKeyIsEmpty(Type ruleType)
     {
         Assert.Throws<ArgumentNullException>(() =>  CreateRule(ruleType, "", "test", MatchingRuleOperation.Equals, true));
@@ -74,6 +114,7 @@ public class SingleOperationMatchingRuleTests
     [InlineData(typeof(HeaderMatchingRule))]
     [InlineData(typeof(RouteMatchingRule))]
     [InlineData(typeof(QueryMatchingRule))]
+    [InlineData(typeof(CookieMatchingRule))]
     public void Rule_ShouldThrowArgumentException_WhenInputTypeIsInvalid(Type ruleType)
     {
         var rule = CreateRule(ruleType, "test", "test", MatchingRuleOperation.Equals, true);
@@ -89,6 +130,7 @@ public class SingleOperationMatchingRuleTests
             _ when ruleType == typeof(HeaderMatchingRule) => new HeaderMatchingRule(key, value, operation, negate),
             _ when ruleType == typeof(RouteMatchingRule) => new RouteMatchingRule(key, value, operation, negate),
             _ when ruleType == typeof(QueryMatchingRule) => new QueryMatchingRule(key, value, operation, negate),
+            _ when ruleType == typeof(CookieMatchingRule) => new CookieMatchingRule(key, value, operation, negate),
             _ => throw new NotImplementedException($"Unknown rule type: {ruleType}")
         };
     }

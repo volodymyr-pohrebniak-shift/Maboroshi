@@ -1,5 +1,6 @@
 ﻿namespace Maboroshi.Web;
 
+using Maboroshi.Web.Converters;
 using Maboroshi.Web.Models;
 using Maboroshi.Web.Utils;
 using System.Text.Json;
@@ -14,7 +15,7 @@ public class FileConfigurationParser(string filePath) : IConfigurationParser
 {
     private readonly JsonSerializerOptions _options = new()
     {
-        Converters = { },
+        Converters = { new JsonMatchingRuleConverter() },
         PropertyNameCaseInsensitive = true,
         UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip

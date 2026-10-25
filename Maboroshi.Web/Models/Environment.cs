@@ -5,6 +5,7 @@ namespace Maboroshi.Web.Models;
 public class Environment
 {
     public string Name { get; }
+    [JsonPropertyName("active")]
     public bool IsActive { get; }
     public IEnumerable<MockedRoute> Routes { get; }
 

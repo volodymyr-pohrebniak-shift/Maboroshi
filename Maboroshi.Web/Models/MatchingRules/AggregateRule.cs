@@ -5,16 +5,20 @@ using System.Text.Json.Serialization;
 [method: JsonConstructor]
 public class AggregateRule(IEnumerable<IMatchingRule> rules, AggregateRuleOperation op) : BaseMatchingRule
 {
+    public IEnumerable<IMatchingRule> Rules { get; } = rules?.Any() == true
+        ? rules
+        : throw new ArgumentException("A group of rules can't be empty", nameof(rules));
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public AggregateRuleOperation Op { get; } = op;
+
     public override bool Evaluate(IRuleInput input)
     {
-        if (!rules.Any())
-            return false;
-
-        foreach (var rule in rules)
+        foreach (var rule in Rules)
         {
             var result = rule.Evaluate(input);
 
-            switch (op)
+            switch (Op)
             {
                 case AggregateRuleOperation.AND when !result:
                     return false;
@@ -23,7 +27,7 @@ public class AggregateRule(IEnumerable<IMatchingRule> rules, AggregateRuleOperat
             }
         }
 
-        return op == AggregateRuleOperation.AND;
+        return Op == AggregateRuleOperation.AND;
     }
 }
 

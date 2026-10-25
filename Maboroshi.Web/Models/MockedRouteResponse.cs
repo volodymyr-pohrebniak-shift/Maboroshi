@@ -8,7 +8,7 @@ public class MockedRouteResponse
     public required string Name { get; init; }
     public string? Description { get; init; }
     public string? Body { get; init; }
-    public IEnumerable<BaseMatchingRule> Rules { get; init; } = [];
+    public IEnumerable<IMatchingRule> Rules { get; init; } = [];
     public IEnumerable<ResponseHeader> Headers { get; init; } = [];
     public bool StrictTemplateErrors { get; init; }
     public bool DisableTemplating { get; init; }

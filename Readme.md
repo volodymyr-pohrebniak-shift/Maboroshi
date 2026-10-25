@@ -88,6 +88,8 @@ Each rule consists of:
   - `contains` – Substring or partial match
   - `starts with`
   - `end with`
+  - `regex` – The value is a regular expression the key's value must match
+  - `is empty` – The key is missing or has an empty value (combine with **Negate** for "is present")
 
 Below is an example of the rule editor interface:
 
