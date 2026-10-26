@@ -10,6 +10,7 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
     private readonly TemplateContext _context = context;
     private readonly IEnumerable<IFunctionResolver> _functionResolvers = functionResolvers;
     private int _iterations;
+    private long _valuesSize;
 
     public string RenderAll(IEnumerable<TemplateNode> nodes)
     {
@@ -68,9 +69,16 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
             if (result is null)
                 continue;
 
-            // only functions create arrays, so checking their results keeps every value within the limit
+            // only functions create values, so checking their results keeps every value within the limits
+            // before it can be printed, stored in a variable or nested into something bigger
             if (result.Depth > options.MaxDepth)
                 throw new TemplateLimitExceededException($"Arrays are nested too deep, the limit is {options.MaxDepth} levels");
+
+            if (result.Size > options.MaxOutputLength)
+                throw new TemplateLimitExceededException($"A value exceeded the limit of {options.MaxOutputLength} characters");
+
+            if ((_valuesSize += result.Size) > options.MaxValuesSize)
+                throw new TemplateLimitExceededException($"Template built more than {options.MaxValuesSize} characters of values");
 
             return result;
         }

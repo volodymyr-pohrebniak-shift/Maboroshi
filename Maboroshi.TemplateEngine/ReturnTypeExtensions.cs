@@ -14,8 +14,9 @@ internal static class ReturnTypeExtensions
             case NumberReturn n:
                 number = n.Value;
                 return true;
-            case StringReturn s:
-                return double.TryParse(s.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out number);
+            // "NaN" and "Infinity" are left as text, template numbers are always finite
+            case StringReturn s when double.TryParse(s.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out number) && double.IsFinite(number):
+                return true;
             default:
                 number = 0;
                 return false;

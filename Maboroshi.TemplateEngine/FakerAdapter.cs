@@ -43,7 +43,7 @@ internal class StaticFakerAdapter : IFakerAdapter
 
             // Commerce
             "commerce.department" => _faker.Commerce.Department(),
-            "commerce.price" => NumberOrText(_faker.Commerce.Price()),
+            "commerce.price" => Math.Round(_faker.Random.Decimal(1, 1000), 2),
             "commerce.categories" => _faker.Commerce.Categories(1)[0],
             "commerce.productname" => _faker.Commerce.ProductName(),
             "commerce.color" => _faker.Commerce.Color(),
@@ -165,8 +165,8 @@ internal class StaticFakerAdapter : IFakerAdapter
             "sbyte" => _faker.Random.SByte(),
             "int" => _faker.Random.Int(),
             "uint" => _faker.Random.UInt(),
-            "long" => _faker.Random.Long(),
-            "ulong" => _faker.Random.ULong(),
+            "long" => _faker.Random.Long(-NumberReturn.MaxSafeInteger, NumberReturn.MaxSafeInteger),
+            "ulong" => _faker.Random.ULong(0, NumberReturn.MaxSafeInteger),
             "short" => _faker.Random.Short(),
             "ushort" => _faker.Random.UShort(),
             "char" => _faker.Random.Char('a', 'z'),
@@ -178,7 +178,7 @@ internal class StaticFakerAdapter : IFakerAdapter
 
             // Misc
             "word" => _faker.Random.Word(),
-            "words" => _faker.Random.Words(args.Length > 0 ? IntArg(args, 0, 1) : null),
+            "words" => _faker.Random.Words(args.Length > 0 ? WordsCount(args) : null),
             "wordsarray" => string.Join(" ", _faker.Random.WordsArray(3)),
             "guid" => _faker.Random.Guid().ToString(),
             "uuid" => _faker.Random.Uuid().ToString(),
@@ -224,8 +224,14 @@ internal class StaticFakerAdapter : IFakerAdapter
             ?? throw new TemplateRuntimeException($"argument {index + 1} should be a date, but got '{args[index]}'");
     }
 
-    private static object NumberOrText(string text) =>
-        double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) ? number : text;
+    // the count may come from the request, so it's checked before Bogus builds the words; each word takes at least two characters
+    private static int WordsCount(ReturnType[] args)
+    {
+        var count = IntArg(args, 0, 1);
+        return count <= TemplateCompilationOptions.DefaultMaxOutputLength / 2
+            ? count
+            : throw new TemplateLimitExceededException($"words count can't exceed {TemplateCompilationOptions.DefaultMaxOutputLength / 2}");
+    }
 
     private static DateTime? TryParseDate(string? input)
     {

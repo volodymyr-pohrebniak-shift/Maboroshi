@@ -3,7 +3,7 @@ using Maboroshi.TemplateEngine.FunctionResolvers;
 
 namespace Maboroshi.Web.Templates;
 
-public class RequestParamsFunctionResolver(RequestAdapter adapter, Action? callback = null) : IFunctionResolver
+public class RequestParamsFunctionResolver(RequestAdapter adapter) : IFunctionResolver
 {
     public ReturnType? TryResolve(string functionName, params ReturnType[] additionalArguments)
     {
@@ -29,13 +29,11 @@ public class RequestParamsFunctionResolver(RequestAdapter adapter, Action? callb
 
         string paramKey = paramName.Value;
         string defaultValue = arguments.Length > 1 ? arguments[1].ToString() : "";
-        callback?.Invoke();
         return new StringReturn(fetchFunc(paramKey, defaultValue));
     }
 
-    private StringReturn Resolve(Func<string> fetchFunc)
+    private static StringReturn Resolve(Func<string> fetchFunc)
     {
-        callback?.Invoke();
         return new StringReturn(fetchFunc());
     }
 }

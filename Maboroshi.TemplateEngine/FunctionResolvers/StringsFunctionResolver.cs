@@ -1,6 +1,5 @@
 ﻿using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Maboroshi.TemplateEngine.FunctionResolvers;
 
@@ -10,7 +9,8 @@ internal class StringsFunctionResolver : IFunctionResolver
     {
         // keeps non-ASCII text readable, the output is still valid JSON
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
+        // arrays are already kept within MaxDepth, the serializer's own default (64) would be lower
+        MaxDepth = TemplateCompilationOptions.DefaultMaxDepth + 1
     };
 
     public ReturnType? TryResolve(string functionName, params ReturnType[] additionalArguments)
@@ -87,6 +87,10 @@ internal class StringsFunctionResolver : IFunctionResolver
 
         if (!arguments[1].TryGetInt(out var totalLength))
             throw new TemplateRuntimeException("Length must be an integer");
+
+        // the length may come from the request, so it's checked before the string is allocated
+        if (totalLength > TemplateCompilationOptions.DefaultMaxOutputLength)
+            throw new TemplateLimitExceededException($"PadStart length can't exceed {TemplateCompilationOptions.DefaultMaxOutputLength}");
 
         var padChar = arguments.Length > 2 && arguments[2].TryGetString(out var padStr) && padStr.Length > 0
             ? padStr[0]

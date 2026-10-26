@@ -1,4 +1,5 @@
-﻿using Maboroshi.Web.Models;
+﻿using Maboroshi.TemplateEngine;
+using Maboroshi.Web.Models;
 using Maboroshi.Web.Models.MatchingRules;
 using Maboroshi.Web.Templates;
 
@@ -45,12 +46,16 @@ public class RequestProcessor(IMockedRouteStore routesStore, TemplateResolver te
             return Results.NotFound();
         }
 
-        foreach (var header in selectedResponse.Headers)
+        string? compiledResponse;
+        try
         {
-            context.Response.Headers[header.Key] = header.Value;
+            compiledResponse = templateResolver.RenderBody(new RequestAdapter(context.Request, route), selectedResponse);
         }
-
-        var compiledResponse = templateResolver.GetTemplate(new RequestAdapter(context.Request, route), selectedResponse);
+        // a strict template error or an exceeded limit; the reason is returned to whoever calls the mock instead of an empty 500
+        catch (TemplateException e)
+        {
+            return Results.Problem(e.Message, statusCode: StatusCodes.Status500InternalServerError, title: $"Template error in response '{selectedResponse.Name}'");
+        }
 
         if (selectedResponse.Delay > 0)
         {

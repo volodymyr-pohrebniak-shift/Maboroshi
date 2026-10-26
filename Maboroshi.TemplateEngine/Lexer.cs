@@ -58,7 +58,7 @@ internal class Lexer(string source)
                 '@' => ReadVariable(),
                 '#' => ReadStartBlock(),
                 '/' => ReadEndBlock(),
-                _ when char.IsDigit(c) || (c == '-' && char.IsDigit(Peek(1))) => ReadNumber(),
+                _ when char.IsAsciiDigit(c) || (c == '-' && char.IsAsciiDigit(Peek(1))) => ReadNumber(),
                 _ => ReadFunctionName()
             });
         }
@@ -86,7 +86,7 @@ internal class Lexer(string source)
         if (_source[_current] == '-') _current++;
         SkipDigits();
 
-        if (Peek(0) == '.' && char.IsDigit(Peek(1)))
+        if (Peek(0) == '.' && char.IsAsciiDigit(Peek(1)))
         {
             _current++;
             SkipDigits();
@@ -149,7 +149,7 @@ internal class Lexer(string source)
 
     private void SkipDigits()
     {
-        while (_current < _source.Length && char.IsDigit(_source[_current])) _current++;
+        while (_current < _source.Length && char.IsAsciiDigit(_source[_current])) _current++;
     }
 
     private static bool IsTerminator(char c) => char.IsWhiteSpace(c) || c is '(' or ')' or '}' or '\'';

@@ -58,6 +58,11 @@ internal class ArraysFunctionResolver : IFunctionResolver
         }
 
         var separator = arguments.Length > 1 && arguments[1].TryGetString(out var sep) ? sep : " ";
+
+        // a long separator multiplies with the item count, so the size is checked before joining
+        if (items.Sum(v => v.Size) + (long)separator.Length * Math.Max(0, items.Length - 1) > TemplateCompilationOptions.DefaultMaxOutputLength)
+            throw new TemplateLimitExceededException($"join result can't exceed {TemplateCompilationOptions.DefaultMaxOutputLength} characters");
+
         return new StringReturn(string.Join(separator, items.Select(v => v.ToString())));
     }
 

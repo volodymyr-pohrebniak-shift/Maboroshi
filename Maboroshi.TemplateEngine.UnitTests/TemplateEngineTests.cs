@@ -395,6 +395,101 @@ public class TemplateEngineTests
         act.Should().Throw<TemplateLimitExceededException>();
     }
 
+    [Theory]
+    [InlineData("x{{ １ }}y")]
+    [InlineData("{{ add ٣ 1 }}")]
+    public void Compile_ShouldTreatNonAsciiDigits_AsAnUnknownFunction(string template)
+    {
+        Compile("<" + template + ">").Should().Be(template.StartsWith('x') ? "<xy>" : "<>");
+
+        var act = () => Compile(template, strict: true);
+
+        act.Should().Throw<TemplateRuntimeException>();
+    }
+
+    [Fact]
+    public void Compile_ShouldLimitValues_NotOnlyTheOutput()
+    {
+        // every line multiplies the value tenfold, while the output stays "ok"
+        var template = "{{var 'a' 'xxxxxxxxxx'}}" + string.Concat(Enumerable.Repeat("{{var 'a' (join (array @a @a @a @a @a @a @a @a @a @a) '')}}", 4)) + "ok";
+
+        var act = () => TemplateGenerator.CreateTemplate(template, new(false, MaxOutputLength: 1000)).Compile();
+
+        act.Should().Throw<TemplateLimitExceededException>().WithMessage("*value exceeded*");
+    }
+
+    [Fact]
+    public void Compile_ShouldLimitArrays_BeforePrintingThem()
+    {
+        // arrays share their items, so 24 doublings are cheap until something prints 3 * 2^24 characters
+        var template = "{{var 'a' (array 1 1)}}" + string.Concat(Enumerable.Repeat("{{var 'a' (array @a @a)}}", 24)) + "{{var 'b' (json @a)}}ok";
+
+        var act = () => Compile(template);
+
+        act.Should().Throw<TemplateLimitExceededException>();
+    }
+
+    [Fact]
+    public void Compile_ShouldLimitAllValuesOfOneRender_Together()
+    {
+        // each value is within the limit, but the loop builds a lot of them
+        const string template = "{{#repeat 1000}}{{var 'x' (padStart 'x' 900)}}{{/end}}done";
+
+        var act = () => TemplateGenerator.CreateTemplate(template, new(false, MaxOutputLength: 1000)).Compile();
+
+        act.Should().Throw<TemplateLimitExceededException>().WithMessage("*characters of values*");
+    }
+
+    [Theory]
+    [InlineData("{{ padStart 'x' 1000000000 }}")]
+    [InlineData("{{ faker 'words' 30000000 }}")]
+    [InlineData("{{ join (split (padStart '' 100000 ',') ',') (padStart '' 100000 '-') }}")]
+    public void Compile_ShouldCheckSizeArguments_BeforeAllocating(string template)
+    {
+        var act = () => Compile(template);
+
+        act.Should().Throw<TemplateLimitExceededException>();
+    }
+
+    [Theory]
+    [InlineData("{{ divide 1 0 }}")]
+    [InlineData("{{ mod 5 0 }}")]
+    public void Compile_ShouldFail_WhenCalculationIsNotAFiniteNumber(string template)
+    {
+        Compile(template).Should().BeEmpty();
+
+        var act = () => Compile(template, strict: true);
+
+        act.Should().Throw<TemplateRuntimeException>().WithMessage("*not a finite number*");
+    }
+
+    [Theory]
+    [InlineData("{{ multiply 1000000 1000000000 }}", "1000000000000000")]
+    [InlineData("{{ divide 1 4 }}", "0.25")]
+    [InlineData("{{#if (eq 'NaN' 'NaN')}}yes{{else}}no{{/end}}", "yes")]
+    public void Compile_ShouldPrintNumbers_AsValidJsonNumbers(string template, string expected)
+    {
+        Compile(template, strict: true).Should().Be(expected);
+    }
+
+    [Fact]
+    public void Compile_ShouldGenerateFakeNumbers_IndependentlyOfCultureAndPrecision()
+    {
+        var culture = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = new CultureInfo("uk-UA");
+        try
+        {
+            Compile("{{ json (faker 'commerce.price') }}", strict: true).Should().MatchRegex(@"^\d+(\.\d{1,2})?$");
+            var longValue = Compile("{{ faker 'long' }}", strict: true);
+            longValue.Should().MatchRegex(@"^-?\d+$");
+            Math.Abs(long.Parse(longValue)).Should().BeLessThanOrEqualTo(9_007_199_254_740_991);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = culture;
+        }
+    }
+
     private static string Compile(string template, bool strict = false) =>
         TemplateGenerator.CreateTemplate(template, new(strict)).Compile();
 }

@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Maboroshi.Web.Converters;
 using Maboroshi.Web.RouteMatching;
-using Maboroshi.Web.Services;
 using Maboroshi.Web.Templates;
 
 namespace Maboroshi.Web;
@@ -15,7 +14,6 @@ public static class Program
         builder.Services.AddSingleton<UrlMatchinStrategyFactory>();
         builder.Services.AddSingleton<IUrlMatchingHandler, UrlMatchingHandler>();
         builder.Services.AddSingleton<IMockedRouteStore, InMemoryMockedRouteStore>();
-        builder.Services.AddSingleton<ICacheResetTokenProvider, CacheResetTokenProvider>();
 
         builder.Services.AddSingleton((IServiceProvider serviceProvider) =>
         {
@@ -28,7 +26,6 @@ public static class Program
 
         builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonMatchingRuleConverter()));
 
-        builder.Services.AddMemoryCache();
         builder.Services.AddScoped<RequestProcessor>();
         builder.Services.AddSingleton<TemplateResolver>();
 
@@ -46,7 +43,7 @@ public static class Program
 
         app.MapGet("/$$$SYSTEM$$$/environments", (EnvironmentsProvider environmentsProvider) => environmentsProvider.GetEnvironments());
 
-        app.MapPut("/$$$SYSTEM$$$/environments", async (HttpRequest request, EnvironmentsProvider environmentsProvider, ICacheResetTokenProvider tokenProvider) =>
+        app.MapPut("/$$$SYSTEM$$$/environments", async (HttpRequest request, EnvironmentsProvider environmentsProvider) =>
         {
             // the body is read manually to report invalid configuration as 400 with a reason, model constructors throw ArgumentException
             Models.Environment[]? environments;
@@ -63,7 +60,6 @@ public static class Program
                 return Results.Problem("Environments are required", statusCode: StatusCodes.Status400BadRequest, title: "Invalid configuration");
 
             environmentsProvider.SetEnvironments(environments);
-            tokenProvider.CancelAndRefresh();
             return Results.Ok();
         });
 
