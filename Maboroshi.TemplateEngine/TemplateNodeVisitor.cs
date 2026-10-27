@@ -61,7 +61,7 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
             {
                 result = resolver.TryResolve(name, parameters);
             }
-            catch (Exception e) when (e is not TemplateException)
+            catch (Exception e) when (e is not (TemplateException or OutOfMemoryException))
             {
                 throw new TemplateRuntimeException($"function {node.Name} failed: {e.Message}", e);
             }
@@ -105,12 +105,12 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
 
     public ReturnType VisitBlockNode(BlockNode node)
     {
-        return node.Name switch
+        return node.Name.ToLowerInvariant() switch
         {
             "repeat" => EvaluateRepeatBlock(node),
             "each" => EvaluateEachBlock(node),
             "if" => EvaluateIfBlock(node),
-            _ => new StringReturn(string.Empty),
+            _ => throw new TemplateRuntimeException($"Unknown block '{node.Name}'"),
         };
     }
 
@@ -126,7 +126,9 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
 
         for (var i = 0; i < node.Body.Count; i++)
         {
-            if (node.Body[i] is not FunctionNode { Name: "else" or "elsif" } clause) continue;
+            if (node.Body[i] is not FunctionNode clause) continue;
+            var clauseName = clause.Name.ToLowerInvariant();
+            if (clauseName is not ("else" or "elsif")) continue;
 
             if (condition is null)
                 throw new TemplateRuntimeException("'else' must be the last clause of an if block");
@@ -134,7 +136,7 @@ internal class TemplateNodeVisitor(TemplateContext context, IEnumerable<IFunctio
             branches.Add((condition, start, i));
             start = i + 1;
 
-            if (clause.Name == "else")
+            if (clauseName == "else")
             {
                 if (clause.Parameters.Count != 0)
                     throw new TemplateRuntimeException("'else' can't have any parameters");

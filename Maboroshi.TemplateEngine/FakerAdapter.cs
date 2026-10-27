@@ -70,9 +70,12 @@ internal class StaticFakerAdapter : IFakerAdapter
 
             "date.future" => _faker.Date.Future(IntArg(args, 0, 1), DateArg(args, 1)),
 
-            "date.between" => args.Length >= 2
-                ? _faker.Date.Between(DateArg(args, 0)!.Value, DateArg(args, 1)!.Value)
-                : _faker.Date.Between(DateTime.Now.AddDays(-10), DateTime.Now),
+            "date.between" => args.Length switch
+            {
+                0 => _faker.Date.Between(DateTime.UtcNow.AddDays(-10), DateTime.UtcNow),
+                1 => throw new TemplateRuntimeException("date.between needs both the start and the end date"),
+                _ => _faker.Date.Between(DateArg(args, 0)!.Value, DateArg(args, 1)!.Value),
+            },
 
             "date.recent" => _faker.Date.Recent(IntArg(args, 0, 1)),
 
@@ -158,12 +161,12 @@ internal class StaticFakerAdapter : IFakerAdapter
             "digits" => int.Parse(_faker.Random.Digits(1)[0].ToString()),
             "even" => args.Length == 0 ? _faker.Random.Even() : _faker.Random.Even(IntArg(args, 0, 0), IntArg(args, 1, int.MaxValue)),
             "odd" => args.Length == 0 ? _faker.Random.Odd() : _faker.Random.Odd(IntArg(args, 0, 0), IntArg(args, 1, int.MaxValue)),
-            "double" => _faker.Random.Double(),
-            "decimal" => _faker.Random.Decimal(),
-            "float" => _faker.Random.Float(),
+            "double" => _faker.Random.Double(NumberArg(args, 0, 0), NumberArg(args, 1, 1)),
+            "decimal" => _faker.Random.Decimal((decimal)NumberArg(args, 0, 0), (decimal)NumberArg(args, 1, 1)),
+            "float" => _faker.Random.Float((float)NumberArg(args, 0, 0), (float)NumberArg(args, 1, 1)),
             "byte" => _faker.Random.Byte(),
             "sbyte" => _faker.Random.SByte(),
-            "int" => _faker.Random.Int(),
+            "int" => _faker.Random.Int(IntArg(args, 0, int.MinValue), IntArg(args, 1, int.MaxValue)),
             "uint" => _faker.Random.UInt(),
             "long" => _faker.Random.Long(-NumberReturn.MaxSafeInteger, NumberReturn.MaxSafeInteger),
             "ulong" => _faker.Random.ULong(0, NumberReturn.MaxSafeInteger),
@@ -199,9 +202,24 @@ internal class StaticFakerAdapter : IFakerAdapter
             char c => new StringReturn(c.ToString()),
             string s => new StringReturn(s),
             bool b => new BoolReturn(b),
-            DateTime d => new StringReturn(d.ToString("o", CultureInfo.InvariantCulture)),
+            DateTime d => new StringReturn(ToIsoUtc(d)),
             _ => null
         };
+    }
+
+    // the same format as {{now}}; Bogus dates are local unless a reference date is given
+    private static string ToIsoUtc(DateTime date) =>
+        (date.Kind == DateTimeKind.Local ? date.ToUniversalTime() : DateTime.SpecifyKind(date, DateTimeKind.Utc))
+            .ToString("o", CultureInfo.InvariantCulture);
+
+    private static double NumberArg(ReturnType[] args, int index, double defaultValue)
+    {
+        if (args.Length <= index)
+            return defaultValue;
+
+        return args[index].TryGetNumber(out var value)
+            ? value
+            : throw new TemplateRuntimeException($"argument {index + 1} should be a number, but got '{args[index]}'");
     }
 
     // a missing argument falls back to the default, an invalid one is an error
@@ -235,7 +253,7 @@ internal class StaticFakerAdapter : IFakerAdapter
 
     private static DateTime? TryParseDate(string? input)
     {
-        return DateTime.TryParse(input, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt) ? dt : null;
+        return DateTime.TryParse(input, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var dt) ? dt : null;
     }
 
     private static int GetRandomNumber(ReturnType[] args) => args.Length == 0

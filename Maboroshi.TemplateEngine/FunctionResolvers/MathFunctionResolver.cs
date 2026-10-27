@@ -27,31 +27,34 @@ internal class MathFunctionResolver : IFunctionResolver
 
     private static double? ExtractNumber(ReturnType arg) => arg.TryGetNumber(out var value) ? value : null;
 
-    private static NumberReturn Add(ReturnType[] args) =>
-        args.Select(ExtractNumber).Where(n => n.HasValue).Sum(n => n!.Value);
+    // an argument that isn't a number is an error: skipping it would silently shift the remaining ones
+    private static double[] Numbers(ReturnType[] args, string functionName) => Array.ConvertAll(args, arg => arg.TryGetNumber(out var value)
+        ? value
+        : throw new TemplateRuntimeException($"{functionName} expects numbers, but got '{arg}'"));
+
+    private static NumberReturn Add(ReturnType[] args) => Numbers(args, "add").Sum();
 
     private static NumberReturn Subtract(ReturnType[] args)
     {
-        var numbers = args.Select(ExtractNumber).Where(n => n.HasValue).Select(n => n.Value).ToList();
-        if (numbers.Count == 0) return 0;
+        var numbers = Numbers(args, "subtract");
+        if (numbers.Length == 0) return 0;
         return numbers.Skip(1).Aggregate(numbers[0], (acc, val) => acc - val);
     }
 
-    private static NumberReturn Multiply(ReturnType[] args) =>
-        new(args.Select(ExtractNumber).Where(n => n.HasValue).Aggregate(1.0, (acc, val) => acc * val!.Value));
+    private static NumberReturn Multiply(ReturnType[] args) => Numbers(args, "multiply").Aggregate(1.0, (acc, val) => acc * val);
 
     private static NumberReturn Divide(ReturnType[] args)
     {
-        var numbers = args.Select(ExtractNumber).Where(n => n.HasValue).Select(n => n.Value).ToList();
-        if (numbers.Count == 0) return new(0);
-        return new(numbers.Skip(1).Aggregate(numbers[0], (acc, val) => acc / val));
+        var numbers = Numbers(args, "divide");
+        if (numbers.Length == 0) return 0;
+        return numbers.Skip(1).Aggregate(numbers[0], (acc, val) => acc / val);
     }
 
     private static NumberReturn Modulo(ReturnType[] args)
     {
-        var nums = args.Select(ExtractNumber).Where(n => n.HasValue).Select(n => n.Value).ToList();
-        if (nums.Count < 2) throw new TemplateRuntimeException("Modulo requires at least two numbers");
-        return new(nums[0] % nums[1]);
+        var nums = Numbers(args, "modulo");
+        if (nums.Length < 2) throw new TemplateRuntimeException("Modulo requires at least two numbers");
+        return nums[0] % nums[1];
     }
 
     private static NumberReturn Ceil(ReturnType[] args)

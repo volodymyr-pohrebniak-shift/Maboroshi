@@ -3,7 +3,7 @@
 internal class Lexer(string source)
 {
     // Tags that produce no output; a line holding only such a tag is removed entirely (Handlebars "standalone" rule)
-    private static readonly HashSet<string> StandaloneFunctions = ["else", "elsif", "var"];
+    private static readonly HashSet<string> StandaloneFunctions = new(["else", "elsif", "var"], StringComparer.OrdinalIgnoreCase);
 
     private readonly string _source = source;
     private readonly List<Token> _tokens = [];
@@ -125,7 +125,7 @@ internal class Lexer(string source)
         if (name.Length == 0)
             throw new TemplateParsingException("Block name can't be empty");
 
-        if (name != "end")
+        if (!name.Equals("end", StringComparison.OrdinalIgnoreCase))
             throw new TemplateParsingException("Block should be closed by 'end' keyword");
 
         return new Token(TokenType.BLOCK_END, name);

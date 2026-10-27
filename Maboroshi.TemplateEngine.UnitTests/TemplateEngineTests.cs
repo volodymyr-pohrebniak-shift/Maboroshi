@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using FluentAssertions;
+using Maboroshi.TemplateEngine.FunctionResolvers;
 
 namespace Maboroshi.TemplateEngine.UnitTests;
 
@@ -490,6 +491,83 @@ public class TemplateEngineTests
         }
     }
 
+    [Fact]
+    public void Compile_ShouldNotHideOutOfMemory_InNonStrictMode()
+    {
+        var template = TemplateGenerator.CreateTemplate("a{{ boom }}b");
+
+        var act = () => template.Compile(new ThrowingResolver(new OutOfMemoryException()));
+
+        act.Should().Throw<OutOfMemoryException>();
+        template.Compile(new ThrowingResolver(new InvalidOperationException())).Should().Be("ab");
+    }
+
+    [Fact]
+    public void Compile_ShouldFail_OnUnknownBlock()
+    {
+        Compile("a{{#repaet 3}}x{{/end}}b").Should().Be("ab");
+
+        var act = () => Compile("{{#repaet 3}}x{{/end}}", strict: true);
+
+        act.Should().Throw<TemplateRuntimeException>().WithMessage("Unknown block 'repaet'");
+    }
+
+    [Theory]
+    [InlineData("{{#If 'y'}}A{{Else}}B{{/End}}", "A")]
+    [InlineData("{{#IF ''}}A{{ELSIF 'y'}}B{{ELSE}}C{{/END}}", "B")]
+    [InlineData("{{#Repeat 2}}x{{/end}}", "xx")]
+    [InlineData("[\n  {{#If ''}}\n  a\n  {{Else}}\n  b\n  {{/End}}\n]", "[\n  b\n]")]
+    public void Compile_ShouldTreatBlockAndClauseNames_CaseInsensitively(string template, string expected)
+    {
+        Compile(template, strict: true).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("{{ subtract '' 5 }}")]
+    [InlineData("{{ divide 'abc' 2 }}")]
+    [InlineData("{{ modulo 'x' 10 3 }}")]
+    [InlineData("{{ add 1 (array 2) }}")]
+    public void Compile_ShouldFail_WhenArithmeticGetsNotANumber(string template)
+    {
+        var act = () => Compile(template, strict: true);
+
+        act.Should().Throw<TemplateRuntimeException>().WithMessage("*expects numbers*");
+    }
+
+    [Theory]
+    [InlineData("{{ int 5 5 }}", "5")]
+    [InlineData("{{ float 2.5 2.5 }}", "2.5")]
+    [InlineData("{{ faker 'double' 1.5 1.5 }}", "1.5")]
+    [InlineData("{{ faker 'decimal' 3 3 }}", "3")]
+    public void Compile_ShouldUseRange_OfNumberShortcuts(string template, string expected)
+    {
+        Compile(template, strict: true).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("{{ now }}")]
+    [InlineData("{{ faker 'date.past' }}")]
+    [InlineData("{{ faker 'date.soon' 3 }}")]
+    [InlineData("{{ faker 'date.between' '2020-01-01' '2020-01-02' }}")]
+    public void Compile_ShouldWriteDates_AsIsoUtc(string template)
+    {
+        Compile(template, strict: true).Should().MatchRegex(@"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z$");
+    }
+
+    [Fact]
+    public void Compile_ShouldFail_WhenDateBetweenGetsOneDate()
+    {
+        var act = () => Compile("{{ faker 'date.between' '2020-01-01' }}", strict: true);
+
+        act.Should().Throw<TemplateRuntimeException>().WithMessage("*start and the end*");
+    }
+
     private static string Compile(string template, bool strict = false) =>
         TemplateGenerator.CreateTemplate(template, new(strict)).Compile();
+
+    private class ThrowingResolver(Exception exception) : IFunctionResolver
+    {
+        public ReturnType? TryResolve(string functionName, params ReturnType[] additionalArguments) =>
+            functionName == "boom" ? throw exception : null;
+    }
 }
